@@ -4,7 +4,7 @@ setup(name="switchprint",
       version="zero",
       description="",
       url="https://github.com/Aeva/switchprint",
-      author="Aeva Palecek"
+      author="Aeva Palecek",
       author_email="aeva.ntsc@gmail.com",
       license="GPLv3",
       packages=["switchprint"],
@@ -14,7 +14,7 @@ setup(name="switchprint",
         "console_scripts" : [
             "switchprint=switchprint.switch:daemon",
             ],
-        }
+        },
 
       install_requires = [
         "daemon",

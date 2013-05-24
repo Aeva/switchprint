@@ -45,7 +45,9 @@ http://www.freedesktop.org/software/systemd/libudev/
    CLOSED: [2013-05-24 Fri 12:31]
 ** DONE create the basic dbus service
    CLOSED: [2013-05-24 Fri 12:49]
-** TODO write/adapt the udev module
+** DONE write/adapt the udev module
+   CLOSED: [2013-05-24 Fri 13:16]
+** TODO add a really basic drive framework
 ** TODO add a device driver for arduino repraps
 ** TODO add dbus interfaces to device driver
 ** TODO daemonize and create init script

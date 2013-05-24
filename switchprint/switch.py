@@ -25,11 +25,17 @@ from dbus.mainloop.glib import DBusGMainLoop
 class SwitchBoard(dbus.service.Object):
     """The SwitchBoard class implements the dbus daemon for SwitchBoard."""
     
-    def __init__(self):
-        namespace = "org.voxelpress.switchprint"
-        bus_name = dbus.service.BusName(namespace, bus=dbus.SessionBus())
+    def __init__(self, bus_type):
+        self.__bus_type = bus_type
+        if bus_type == "system":
+            self.__bus = dbus.SystemBus()
+        else:
+            self.__bus = dbus.SessionBus()
+
+        bus_name = dbus.service.BusName(
+            "org.voxelpress.hardware", bus=self.__bus)
         dbus.service.Object.__init__(
-            self, bus_name, "/" + namespace.replace(".", "/"))
+            self, bus_name, "/org/voxelpress/hardware")
         
 
 def daemon():
@@ -37,8 +43,27 @@ def daemon():
     Creates the switchprint daemon.
     """
 
+    bus_type = "session"
+    
+    if sys.platform == "linux2":
+        if os.getuid() == 0:
+            bustype = "system"
+        elif not os.getgroups().count(20):
+            # group 20 is 'dialout', which is required to access serial devices
+            print """
+FATAL ERROR:
+
+When running switchprint as a non-root user, it is neccessary that the
+user be in the 'dialout' group.  To add this user to the dialout, run
+the following command:
+
+$ sudo usermod -a -G dialout {0}
+""".format(os.getlogin())
+            exit(0)
+
+
     # TODO: daemonize this
     main_loop = gobject.MainLoop()
     DBusGMainLoop(set_as_default=True)
-    switchboard = SwitchBoard()
+    switchboard = SwitchBoard(bus_type)
     main_loop.run()

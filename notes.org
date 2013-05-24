@@ -13,6 +13,25 @@ http://www.python.org/dev/peps/pep-3143/
 http://excid3.com/blog/an-actually-decent-python-dbus-tutorial/
 http://dbus.freedesktop.org/doc/dbus-python/doc/tutorial.html
 http://dbus.freedesktop.org/doc/dbus-tutorial.html
+*** notes on terminology and addressing
+glossary: http://dbus.freedesktop.org/doc/dbus-specification.html#idp7786800
+
+**** BUSNAME
+http://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-bus
+The busname for this project is going to be "org.voxelpress.hardware".
+
+**** Object Paths
+***** /org/voxelpress/hardware 
+Is the path for the "switchboard", which enumerates what hardware is
+available and probably contains a bunch of functions that are used to
+communicate between the switchboard and detected hardwares' respective
+subproceses.
+
+***** /org/voxelpress/hardware/UUID
+Is the path form for the detected devices, as well as later on, the
+configured device proxies.
+
+
 ** udev
 http://www.freedesktop.org/software/systemd/gudev/
 http://www.freedesktop.org/software/systemd/libudev/
@@ -22,8 +41,10 @@ http://www.freedesktop.org/software/systemd/libudev/
 * todo list
 ** DONE create a basic package
    CLOSED: [2013-05-24 Fri 12:00]
-** TODO verify that the architecture is using dbus correctly
-** TODO create the basic dbus service
+** DONE verify that the architecture is using dbus correctly
+   CLOSED: [2013-05-24 Fri 12:31]
+** DONE create the basic dbus service
+   CLOSED: [2013-05-24 Fri 12:49]
 ** TODO write/adapt the udev module
 ** TODO add a device driver for arduino repraps
 ** TODO add dbus interfaces to device driver

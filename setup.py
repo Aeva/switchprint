@@ -17,6 +17,7 @@ setup(name="switchprint",
         },
 
       install_requires = [
+        "lxml",
         "daemon",
         "pyserial",
         ])

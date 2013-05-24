@@ -5,6 +5,7 @@
  - python-dbus
  - python-serial
  - python-daemon
+ - lxml
 
 * required reading
 ** daemon
@@ -13,6 +14,7 @@ http://www.python.org/dev/peps/pep-3143/
 http://excid3.com/blog/an-actually-decent-python-dbus-tutorial/
 http://dbus.freedesktop.org/doc/dbus-python/doc/tutorial.html
 http://dbus.freedesktop.org/doc/dbus-tutorial.html
+http://wiki.python.org/moin/DbusExamples
 *** notes on terminology and addressing
 glossary: http://dbus.freedesktop.org/doc/dbus-specification.html#idp7786800
 
@@ -48,6 +50,21 @@ http://www.freedesktop.org/software/systemd/libudev/
 ** DONE write/adapt the udev module
    CLOSED: [2013-05-24 Fri 13:16]
 ** TODO add a really basic drive framework
+and integrate it with the hardware detection thing.
+
+Currently what happens when something is plugged in or removed, the
+hardare thing launches a subprocess, with info about the hardware.
+
+The subprocess then hits the drivers to do their detection thing... it
+may as well at this point be a thing where the subprocess just becomes
+the driver subproces.
+
+Thus, it makes most sense for the driver to not have a manifest, but
+rather a __init__.py, which provide an INFO dict, and defines a class
+named Driver.
+
+
+
 ** TODO add a device driver for arduino repraps
 ** TODO add dbus interfaces to device driver
 ** TODO daemonize and create init script

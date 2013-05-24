@@ -63,7 +63,29 @@ Thus, it makes most sense for the driver to not have a manifest, but
 rather a __init__.py, which provide an INFO dict, and defines a class
 named Driver.
 
+*** switchprint._hardware
+The connect event will look something like this on linux:
+"tty /dev/bus/usb/001/006 /dev/ttyACM0 blahblahblah"
 
+While the disconnect event has this info:
+tty /dev/bus/usb/001/006
+
+While there is no need for the hardware detection to connect to the
+main thread for anything relating to the on_connect event, the
+information about the device should be stored in the resulting object,
+so that when the disconnect event happened, the appropriate service
+can be introspected, and then a teardown event be called upon it.
+Which, I guess, still doesn't require the main thread =)
+
+*** writing drivers
+I'm currently at a loss of a good framework.  I'll need to think on
+this further.  Essentially, dynamic loading of modules is a pain in
+the ass, and there doesn't seem to be a good way to trick python into
+loading all of the submodules of a driver folder and using __init__.py
+to call a registration function on each.
+
+setup.py entrypoints supposedly can be used for plugin functionality,
+which seems like an appropriate thing to do in this case.
 
 ** TODO add a device driver for arduino repraps
 ** TODO add dbus interfaces to device driver

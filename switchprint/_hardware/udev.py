@@ -19,9 +19,7 @@
 import os, sys, glob
 import subprocess
 import gudev, dbus
-
-from .. import _drivers
-DRIVERS = _drivers.register("usbACM")
+from hardware_service import HardwareService
 
 
 class HardwareMonitor():
@@ -72,65 +70,20 @@ class HardwareMonitor():
         subprocess.Popen(_args, cwd=os.path.split(__file__)[0])    
 
 
-class HardwareSubprocess:
+class HardwareSubprocess(HardwareService):
     """Subprocess for responding to hardware events, so as not to
     stall the main thread."""
     
     def __init__(self, bus_type, state, hint, usb_path, tty_path=None, hw_info=None):
-        namespace = "org.voxelpress.hardware"
-        objpath = "/org/voxelpress/hardware"
-        bus = None
-        if bus_type == "session":
-            bus = dbus.SessionBus()
-        elif bus_type == "system":
-            bus = dbus.SystemBus()
+        HardwareService.__init__(self, bus_type)
         
-        self.__switchboard = bus.get_object(namespace, objpath)
-        
-        import pdb; pdb.set_trace()
         if state == "connect":
-            search_path = os.path.join(
-                os.path.split(__file__)[0],
-                "bootstrap", "*", "manifest.json")
-            
-            found = glob.glob(search_path)
-            for m_path in found:
-                config = self.__probe(m_path, usb_path, tty_path, hw_info)
-                if config:
-                    config["usb_path"] = usb_path
-                    config["hw_info"] = hw_info
-                    self.__on_connect(config)
-                    break
+            print "A device was connected:"
+            print hint, usb_path, tty_path, hw_info
 
         elif state == "disconnect":
-            self.__on_disconnect(usb_path)
-
-    def __callback(self, handler, argument):
-        callback = self.__switchboard.get_dbus_method(handler, "org.voxelpress.events")
-        callback(argument)
-
-    def __probe(self, m_path, usb_path, tty_path, hw_info):
-        with open(m_path, "rb") as m_file:
-            # FIXME ... log exceptions?
-            manifest = json.load(m_file)
-        cwd = os.path.split(m_path)[0]
-        cmd = manifest['cmd']
-        if type(cmd) != list:
-            cmd = [cmd]
-        try:
-            output = subprocess.check_output(
-                cmd + [tty_path, hw_info], cwd=cwd)
-        except subprocess.CalledProcessError:
-            return None
-        return json.loads(output)
-
-    def __on_connect(self, config):
-        """Trigger the on_connect callback on the daemon."""
-        self.__callback("on_connect", json.dumps(config))
-        
-    def __on_disconnect(self, usb_path):
-        """Trigger the on_disconnect callback on the daemon."""
-        self.__callback("on_disconnect", usb_path)
+            print "A device was disconnected:"
+            print hint, usb_path, tty_path, hw_info
 
 
 if __name__ == "__main__":

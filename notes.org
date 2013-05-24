@@ -1,0 +1,105 @@
+
+* dependencies
+ - python-gudev
+ - python-gobject
+ - python-dbus
+ - python-serial
+ - python-daemon
+
+* program structure and installation
+Hm.
+
+I guess at the bottom of things, is a singular script which imports
+most of its functionality from a library.
+
+There then is the dbus service, which I guess is a singleton.
+Additional services are spawned off a subprocesses, I suppose.
+
+In this case, the service doesn't abstract anything - it just
+autodetects arduino based repraps.
+
+* required reading
+** packaging and installation
+ - [ ] I guess distutils docs? =(
+
+** daemon
+ - [ ] I guess just follow the docs
+
+** linux init script stuff
+ - [ ] make one for debian
+
+** udev
+ Shouldn't take too long, since we've used it before, but I need to
+ make a cribsheet for udev terminology.
+
+* todo list
+** TODO create a basic package
+** TODO create the daemon and init script
+** TODO verify that the architecture is using dbus correctly
+** TODO create the basic dbus service
+** TODO write/adapt the udev module
+** TODO add a device driver for arduino repraps
+** TODO add dbus interfaces to device driver
+This is both to report to the main thread that something was
+enumerated or denumerated, and also to provide an interface in which
+other programs can connect to the printer.
+
+* radical architecting
+Idk why I threw in the word "radical".  Sounds cool though.
+
+For starters, this program represents only what is connected - and
+other programs may do so as well.  I'm taking the quick-and-dirty
+approach here, so I'm not only supporting sprinter derivative repraps
+firmwares running on arduinos and arduino clones.
+
+This entire component will probably be thrown out whole-sale at some
+point, ethier due to obsolecence or it recieving lots of improvements.
+For example, supporting the repetier protocol would be neat.  So would
+support for makerbots.  But neither of those are really priorities for
+me, though they may be priorities for other people to try to add.
+
+** at the bottom
+A little init script that spawns or kills the daemon.  The daemon
+subprocess should instance a class that reprepsents the main dbus
+interface, which should probably be something like
+org.voxelpress.hardware or something.
+
+** hardware detection
+Udev events can probably be processed in the same process as the
+daemon, but should be in a separate submodule, to make things cleaner.
+
+** hardware drivers
+Drivers in this case are additional modules (for now, there's going to
+just be sprinter repraps).  Drivers are responsible for identifying
+themselves.  A driver module is both imported by the main thread to
+determine what events it can hook into, and can also call itself as a
+subprocess.
+
+The driver subprocess provides a dbus interface.  This does not
+interact with the main thread, beyond reporting that the device is
+attached or the device has been detached.
+
+** printer control api
+Printers can be accessed simultaneously by several other programs.
+Anyone can read the printer's state, and send manual commands or start
+up a stream.
+
+When a command stream is created, the host software pasess a uuid to
+represent the stream.  This functions like a lock - the program then
+can proceed to dump commands into the stream, and then finishes by
+closing the stream.  These commands are buffered, thus allowing the
+program to be closed.
+
+While other programs cannot add to the stream without knowing the
+uuid, they can pause the print, as well as discard the stream.  There
+is only one stream in memory at a time.
+
+The control api should likely have calls for basic actions, like "move
+axis", "heat up extruder n to k", "home", "set zero", and so on.
+
+This would allow for host software to be written without hardcoding
+anything like gcode.
+
+** printer control lib
+switchprint may as well just provide an api thats easy to use that
+encapsulates the dbus api.

@@ -7,18 +7,11 @@
  - python-daemon
 
 * required reading
-** packaging and installation
- - [ ] I guess distutils docs? =(
-
 ** daemon
- - [ ] I guess just follow the docs
-
+http://www.python.org/dev/peps/pep-3143/
 ** linux init script stuff
- - [ ] make one for debian
-
 ** udev
- Shouldn't take too long, since we've used it before, but I need to
- make a cribsheet for udev terminology.
+** dbus
 
 * todo list
 ** DONE create a basic package

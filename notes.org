@@ -6,18 +6,6 @@
  - python-serial
  - python-daemon
 
-* program structure and installation
-Hm.
-
-I guess at the bottom of things, is a singular script which imports
-most of its functionality from a library.
-
-There then is the dbus service, which I guess is a singleton.
-Additional services are spawned off a subprocesses, I suppose.
-
-In this case, the service doesn't abstract anything - it just
-autodetects arduino based repraps.
-
 * required reading
 ** packaging and installation
  - [ ] I guess distutils docs? =(

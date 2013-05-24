@@ -38,7 +38,7 @@ class SwitchBoard(dbus.service.Object):
             self, bus_name, "/org/voxelpress/hardware")
         
 
-def daemon():
+def start_daemon():
     """
     Creates the switchprint daemon.
     """

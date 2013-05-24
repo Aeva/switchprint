@@ -16,7 +16,10 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os, sys
+import gobject
 import dbus, dbus.service
+from dbus.mainloop.glib import DBusGMainLoop
 
 
 class SwitchBoard(dbus.service.Object):
@@ -28,3 +31,14 @@ class SwitchBoard(dbus.service.Object):
         dbus.service.Object.__init__(
             self, bus_name, "/" + namespace.replace(".", "/"))
         
+
+def daemon():
+    """
+    Creates the switchprint daemon.
+    """
+
+    # TODO: daemonize this
+    main_loop = gobject.MainLoop()
+    DBusGMainLoop(set_as_default=True)
+    switchboard = switch.SwitchBoard()
+    main_loop.run()

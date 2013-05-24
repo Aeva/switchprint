@@ -9,9 +9,15 @@
 * required reading
 ** daemon
 http://www.python.org/dev/peps/pep-3143/
-** linux init script stuff
-** udev
 ** dbus
+http://excid3.com/blog/an-actually-decent-python-dbus-tutorial/
+http://dbus.freedesktop.org/doc/dbus-python/doc/tutorial.html
+http://dbus.freedesktop.org/doc/dbus-tutorial.html
+** udev
+http://www.freedesktop.org/software/systemd/gudev/
+http://www.freedesktop.org/software/systemd/libudev/
+** linux init script stuff
+?
 
 * todo list
 ** DONE create a basic package

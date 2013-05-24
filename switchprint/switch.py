@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 
 # This file is part of Switchprint.
 #
@@ -16,15 +16,15 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os, sys
-
-try:
-    from switchprint import switch
-except ImportError:
-    sys.path.append(os.path.abspath(os.path.join(sys.argv[0],"..","..")))
-    from switchprint import switch
+import dbus, dbus.service
 
 
-if __name__ == "__main__":
-    # TODO: daemonize this
-    switch.main()
+class SwitchBoard(dbus.service.Object):
+    """The SwitchBoard class implements the dbus daemon for SwitchBoard."""
+    
+    def __init__(self):
+        namespace = "org.voxelpress.switchprint"
+        bus_name = dbus.service.BusName(namespace, bus=dbus.SessionBus())
+        dbus.service.Object.__init__(
+            self, bus_name, "/" + namespace.replace(".", "/"))
+        

@@ -16,9 +16,6 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys
-if sys.platform == "linux2":
-    from .udev import *
-else:
-    raise NotImplementedError(
-        "Hardware detection has not yet been implemented for your platform.")
+class DriverType():
+    """This is a base class for drivers."""
+    pass

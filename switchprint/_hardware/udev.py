@@ -20,6 +20,9 @@ import os, sys, glob
 import subprocess
 import gudev, dbus
 
+from .. import _drivers
+DRIVERS = _drivers.register("usbACM")
+
 
 class HardwareMonitor():
     """This class implements the hardware monitor for systems in which

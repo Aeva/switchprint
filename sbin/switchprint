@@ -17,6 +17,9 @@
 
 
 import os, sys
+import gobject
+from dbus.mainloop.glib import DBusGMainLoop
+
 
 try:
     from switchprint import switch
@@ -27,4 +30,7 @@ except ImportError:
 
 if __name__ == "__main__":
     # TODO: daemonize this
-    switch.main()
+    main_loop = gobject.MainLoop()
+    DBusGMainLoop(set_as_default=True)
+    switchboard = switch.SwitchBoard()
+    main_loop.run()

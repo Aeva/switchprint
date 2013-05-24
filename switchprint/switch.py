@@ -40,5 +40,5 @@ def daemon():
     # TODO: daemonize this
     main_loop = gobject.MainLoop()
     DBusGMainLoop(set_as_default=True)
-    switchboard = switch.SwitchBoard()
+    switchboard = SwitchBoard()
     main_loop.run()

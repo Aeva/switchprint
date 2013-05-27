@@ -19,6 +19,7 @@
 import uuid
 import gobject, dbus, dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
+from switchprint import _drivers
 
 
 class HardwareService(dbus.service.Object):
@@ -28,7 +29,7 @@ class HardwareService(dbus.service.Object):
     driver object.  Thus, when a device enumerates successfully, this
     object 'becomes' a dbus.service.Object."""
 
-    def __init__(self, bus_type):
+    def __init__(self, bus_type, hardware_types):
         self.namespace = "org.voxelpress.hardware"
         self.base_path = "/org/voxelpress/hardware"
 
@@ -36,6 +37,11 @@ class HardwareService(dbus.service.Object):
             self.bus = dbus.SessionBus()
         elif bus_type == "system":
             self.bus = dbus.SystemBus()
+
+        self.drivers = {}
+        for hardware_type in hardware_types:
+            for name, driver in _drivers.find("hardware", hardware_type).items():
+                self.drivers[name] = driver
 
     def register(self, driver):
         """This function registers the HardwareService - which should

@@ -16,10 +16,9 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os, sys, glob
+import os
 import subprocess
-import gudev, dbus
-from hardware_service import HardwareService
+import gudev
 
 
 class HardwareMonitor():
@@ -66,30 +65,9 @@ class HardwareMonitor():
 
     def __split(self, *args):
         """Spawn udev.py as a separate process and then return."""
-        _args = ["python", __file__] + [self.__bus_type] + map(str, list(args))
-        subprocess.Popen(_args, cwd=os.path.split(__file__)[0])    
-
-
-class HardwareSubprocess(HardwareService):
-    """Subprocess for responding to hardware events, so as not to
-    stall the main thread."""
-    
-    def __init__(self, bus_type, state, hint, usb_path, tty_path=None, hw_info=None):
-        HardwareService.__init__(self, bus_type)
+        hw_path = os.path.split(__file__)[0]
+        script = os.path.join(hw_path, "services", "udev_service.py")
         
-        if state == "connect":
-            print "A device was connected:"
-            print hint, usb_path, tty_path, hw_info
-
-        elif state == "disconnect":
-            print "A device was disconnected:"
-            print hint, usb_path, tty_path, hw_info
-
-
-if __name__ == "__main__":
-    # this should only happen because this was launched as a
-    # subprocess.
-
-    hws = HardwareSubprocess(*sys.argv[1:])
-    
-    
+        _args = ["python", script] + [self.__bus_type] + map(str, list(args))
+        subprocess.Popen(_args)
+        #subprocess.Popen(_args, cwd=os.path.split(script)[0])

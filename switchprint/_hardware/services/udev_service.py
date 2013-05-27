@@ -31,6 +31,11 @@ class HardwareSubprocess(HardwareService):
             print "A device was connected:"
             print hint, usb_path, tty_path, hw_info
 
+            for driver_name, driver_data in self.drivers.items():
+                driver = driver_data["driver"]()
+                if driver.auto_detect(tty_path):
+                    self.register(driver, usb_path, hw_info)
+
         elif state == "disconnect":
             print "A device was disconnected:"
             print hint, usb_path, tty_path, hw_info

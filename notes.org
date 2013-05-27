@@ -40,7 +40,7 @@ http://www.freedesktop.org/software/systemd/libudev/
 ** linux init script stuff
 ?
 
-* todo list
+* to-do list
 ** DONE create a basic package
    CLOSED: [2013-05-24 Fri 12:00]
 ** DONE verify that the architecture is using dbus correctly
@@ -49,7 +49,8 @@ http://www.freedesktop.org/software/systemd/libudev/
    CLOSED: [2013-05-24 Fri 12:49]
 ** DONE write/adapt the udev module
    CLOSED: [2013-05-24 Fri 13:16]
-** TODO add a really basic drive framework
+** DONE add a really basic drive framework
+   CLOSED: [2013-05-27 Mon 11:37]
 and integrate it with the hardware detection thing.
 
 Currently what happens when something is plugged in or removed, the
@@ -87,7 +88,8 @@ to call a registration function on each.
 setup.py entrypoints supposedly can be used for plugin functionality,
 which seems like an appropriate thing to do in this case.
 
-** TODO add a device driver for arduino repraps
+** DONE add a device driver for arduino repraps
+   CLOSED: [2013-05-27 Mon 17:04]
 ** TODO add dbus interfaces to device driver
 ** TODO daemonize and create init script
 This is both to report to the main thread that something was

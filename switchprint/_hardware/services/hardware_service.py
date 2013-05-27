@@ -16,10 +16,14 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import uuid
+import uuid, hashlib
 import gobject, dbus, dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 from switchprint import _drivers
+
+
+def checksum_uuid(text):
+    return uuid.UUID(hashlib.sha1(text).hexdigest()[:32])
 
 
 class HardwareService(dbus.service.Object):
@@ -43,7 +47,7 @@ class HardwareService(dbus.service.Object):
             for name, driver in _drivers.find("hardware", hardware_type).items():
                 self.drivers[name] = driver
 
-    def register(self, driver):
+    def register(self, driver, hw_path, other_info):
         """This function registers the HardwareService - which should
         normally be ran as a subprocess - as dbus service.  This
         function is called automatically when a driver successfully
@@ -52,11 +56,19 @@ class HardwareService(dbus.service.Object):
         This function also activates an event loop, and thus blocks
         indefinitely."""
 
-        uuid = (driver.uuid or uuid.uuid4()).replace("-", "_")
-        object_path = self.base_path+"/"+uuid
+        printer_uuid = None
+        if driver.uuid:
+            printer_uuid = driver.uuid
+        else:
+            info_string= other_info + driver.post + driver.info
+            printer_uuid = checksum_uuid(info_string)
+
+        object_path = self.base_path+"/"+str(printer_uuid).replace("-", "_")
         bus_name = dbus.service.BusName(self.namespace, bus=self.bus)
-        dbus.service.Object.__init__(self, bus_name, object_path)
+
+        print "Printer connected:", printer_uuid
 
         main_loop = gobject.MainLoop()
         DBusGMainLoop(set_as_default=True)
-        main_loop.run()
+        #dbus.service.Object.__init__(self, bus_name, object_path)
+        #main_loop.run()

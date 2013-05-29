@@ -17,6 +17,7 @@
 
 
 import sys
+from switchprint._workers import drivers
 
 
 def on_connect(bus_type, handler, *event_args):
@@ -26,6 +27,13 @@ def on_connect(bus_type, handler, *event_args):
     for arg in event_args:
         print "Arg {0}: {1}".format(num, arg)
         num += 1
+
+    for driver_name, driver_data in drivers.find("hardware", handler).items():
+        driver = driver_data["driver"]()
+        if handler == "usbACM":
+            device_path, serial_port, device_info = event_args
+            if driver.auto_detect(serial_port):
+                print "Device enumerated!"
 
 
 if __name__ == "__main__":

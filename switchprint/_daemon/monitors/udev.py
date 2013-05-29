@@ -38,11 +38,11 @@ class HardwareMonitor():
         if action == "add" and subsystem == "tty":
             usb_path = device.get_parent().get_parent().get_device_file()
             tty_path = device.get_device_file()
-            self.__on_connect("tty", usb_path, tty_path, hw_info)
+            self.__on_connect("usbACM", usb_path, tty_path, hw_info)
                 
         elif action == "remove" and subsystem == "usb":
             usb_path = device.get_device_file()
-            self.__on_disconnect("tty", usb_path)
+            self.__on_disconnect("usbACM", usb_path)
 
     def __on_connect(self, hint, usb_path, tty_path, hw_info):
         _workers.create("on_connect", self.__bus_type, hint, usb_path, tty_path, hw_info)
@@ -61,4 +61,4 @@ class HardwareMonitor():
                 except:
                     # FIXME ... not sure what to do =)
                     continue
-                self.__on_connect("tty", usb_path, tty_path, hw_info)
+                self.__on_connect("usbACM", usb_path, tty_path, hw_info)

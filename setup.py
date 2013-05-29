@@ -12,7 +12,7 @@ setup(name="switchprint",
 
       entry_points = {
         "console_scripts" : [
-            "switchprint=switchprint._switch:start_daemon",
+            "switchprint=switchprint._daemon:start_daemon",
             ],
         },
 

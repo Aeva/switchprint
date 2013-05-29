@@ -21,7 +21,7 @@ import gobject
 import dbus, dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 
-import _hardware
+import monitors
 
 
 class SwitchBoard(dbus.service.Object):
@@ -68,5 +68,5 @@ $ sudo usermod -a -G dialout {0}
     main_loop = gobject.MainLoop()
     DBusGMainLoop(set_as_default=True)
     switchboard = SwitchBoard(bus_type)
-    hardwaremon = _hardware.HardwareMonitor(bus_type)
+    hardwaremon = monitors.HardwareMonitor(bus_type)
     main_loop.run()

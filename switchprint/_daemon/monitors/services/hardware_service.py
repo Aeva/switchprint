@@ -19,7 +19,7 @@
 import uuid, hashlib
 import gobject, dbus, dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
-from switchprint import _drivers
+from switchprint._workers import drivers
 
 
 def checksum_uuid(text):
@@ -44,7 +44,7 @@ class HardwareService(dbus.service.Object):
 
         self.drivers = {}
         for hardware_type in hardware_types:
-            for name, driver in _drivers.find("hardware", hardware_type).items():
+            for name, driver in drivers.find("hardware", hardware_type).items():
                 self.drivers[name] = driver
 
     def register(self, driver, hw_path, other_info):

@@ -17,7 +17,6 @@
 
 
 import os, glob
-#__import__("switchprint._drivers.sprinter_reprap", fromlist=["Driver"])
 
 
 def all_drivers():
@@ -30,7 +29,7 @@ def all_drivers():
     for found in search:
         driver_path = os.path.split(found)[0]
         driver_name = os.path.split(driver_path)[1]
-        imported = __import__("switchprint._drivers."+driver_name,
+        imported = __import__("switchprint._workers.drivers."+driver_name,
                           fromlist=["Driver", "METADATA"])
         drivers[driver_name] = imported.METADATA
         drivers[driver_name]["driver"] = imported.Driver

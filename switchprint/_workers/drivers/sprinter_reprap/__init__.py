@@ -18,7 +18,7 @@
 
 import sys, os
 import serial, time
-from switchprint._drivers.common import DriverBase
+from switchprint._workers.drivers.common import DriverBase
 
 
 METADATA = {

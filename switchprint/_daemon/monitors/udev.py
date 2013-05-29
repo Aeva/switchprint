@@ -17,7 +17,7 @@
 
 
 import os
-import subprocess
+from switchprint import _workers
 import gudev
 
 
@@ -45,10 +45,10 @@ class HardwareMonitor():
             self.__on_disconnect("tty", usb_path)
 
     def __on_connect(self, hint, usb_path, tty_path, hw_info):
-        self.__split("connect", hint, usb_path, tty_path, hw_info)
+        _workers.create("on_connect", self.__bus_type, hint, usb_path, tty_path, hw_info)
 
     def __on_disconnect(self, hint, usb_path):
-        self.__split("disconnect", hint, usb_path)
+        _workers.create("on_disconnect", self.__bus_type, hint, usb_path)
 
     def __scan(self):
         """Iterate over available serial ports and try to find repraps."""
@@ -62,12 +62,3 @@ class HardwareMonitor():
                     # FIXME ... not sure what to do =)
                     continue
                 self.__on_connect("tty", usb_path, tty_path, hw_info)
-
-    def __split(self, *args):
-        """Spawn udev.py as a separate process and then return."""
-        hw_path = os.path.split(__file__)[0]
-        script = os.path.join(hw_path, "services", "udev_service.py")
-        
-        _args = ["python", script] + [self.__bus_type] + map(str, list(args))
-        subprocess.Popen(_args)
-        #subprocess.Popen(_args, cwd=os.path.split(script)[0])

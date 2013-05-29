@@ -16,15 +16,17 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-import subprocess
+import sys
 
 
-def create(event, bus_type, *args):
-    """Creates a worker subprocess to handle a particular event so
-    they can be handled outside of the main process."""
+def on_connect(bus_type, handler, *event_args):
+    print "Connect event"
+    print "Handler:", handler
+    num = 0
+    for arg in event_args:
+        print "Arg {0}: {1}".format(num, arg)
+        num += 1
 
-    assert event in ("on_connect", "on_disconnect")
-    script = os.path.join(os.path.split(__file__)[0], event+".py")
-    _args = ["python", script] + [bus_type] + map(str, list(args))
-    subprocess.Popen(_args)
+
+if __name__ == "__main__":
+    on_connect(*sys.argv[1:])

@@ -162,6 +162,10 @@ This is both to report to the main thread that something was
 enumerated or denumerated, and also to provide an interface in which
 other programs can connect to the printer.
 
+** TODO add a whole buncha unit tests!
+and restructuring things where necessary
+** TODO write documentation describing internals
+** TODO write documentation explaining api
 * extra-credit to-do list
 ** TODO use GDBus via gi instead of libdbus via python-dbus
 to be future proof

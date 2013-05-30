@@ -76,14 +76,38 @@ class Driver(DriverBase):
         for baud in BAUDS[::-1]:
             try:
                 self.reset()
-                self.__s = serial.Serial(port, baud, timeout = 0.25)
+                self.__s = serial.Serial(port, baud, timeout=0.25)
                 time.sleep(1)
                 post = "".join(self.__s.readlines()).strip()
                 for trigger in ("sprinter", "marlin"):
                     if post.lower().count(trigger):
+                        self.__port = port
                         self.__baud = baud
                         self.post = post
                         self.info = "".join(self.__write("M115", True))
                         return True
             except ValueError:
                 continue
+
+    def inform_reconnect(self):
+        """This function is called by a worker subprocess when a
+        driver is detected, but the corresponding printer object
+        already exists.  In which case, this function should return a
+        simple argument list which can be pushed to the already
+        existing service, so that it may call the informed_reconnect
+        function in it's driver instance."""
+        return self.__port, self.__baud
+
+    def informed_reconnect(self, port, baud):
+        """The arguments for this function should match what is
+        returned by inform_reconnect.  This causes the driver to
+        disconnect from whatever device it thinks it is connected to,
+        and attach to whatever ostensibly new device is described."""
+        
+        control_ttyhup(port, True)
+        self.__port = port
+        self.__baud = baud
+        self.__s = serial.Serial(port, baud, timeout=0.25)
+        time.sleep(1)
+        self.post = "".join(self.__s.readlines()).strip()        
+        self.info = "".join(self.__write("M115", True))

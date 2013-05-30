@@ -29,6 +29,22 @@ class DriverBase:
         This function should also set self.uuid."""
         raise NotImplementedError()
 
+    def inform_reconnect(self):
+        """This function is called by a worker subprocess when a
+        driver is detected, but the corresponding printer object
+        already exists.  In which case, this function should return a
+        simple argument list which can be pushed to the already
+        existing service, so that it may call the informed_reconnect
+        function in it's driver instance."""
+        raise NotImplementedError()
+
+    def informed_reconnect(self, *args):
+        """The arguments for this function should match what is
+        returned by inform_reconnect.  This causes the driver to
+        disconnect from whatever device it thinks it is connected to,
+        and attach to whatever ostensibly new device is described."""
+        raise NotImplementedError()
+
     def stream(self, data):
         """Called to stream commands to a printer.  This data is
         cached by switchprint, and streamed to the printer.  Host

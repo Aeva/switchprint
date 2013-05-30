@@ -5,7 +5,6 @@
  - python-dbus
  - python-serial
  - python-daemon
- - lxml
 
 * required reading
 ** daemon
@@ -32,7 +31,6 @@ subproceses.
 ***** /org/voxelpress/hardware/UUID
 Is the path form for the detected devices, as well as later on, the
 configured device proxies.
-
 
 ** udev
 http://www.freedesktop.org/software/systemd/gudev/
@@ -91,7 +89,8 @@ which seems like an appropriate thing to do in this case.
 ** DONE add a device driver for arduino repraps
    CLOSED: [2013-05-27 Mon 17:04]
 ** TODO restructure program for clarity
-** TODO clean up the hardware "service" model
+** DONE clean up the hardware "service" model
+   CLOSED: [2013-05-30 Thu 13:41]
 *** problem
 When a relevant udev hardware event happens, the main thread spawns a
 subprocess to take care of it.  This code was moved out of the
@@ -141,7 +140,6 @@ a printer.  _drivers implement hardware functionality irrespective of
 any switchprint nonsese, and thus provide clean interface which a
 printer may interact with the hardware without knowing anything about
 the hardware.
-
 
 
 ** TODO add dbus interfaces to device driver

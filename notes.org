@@ -148,6 +148,12 @@ This is both to report to the main thread that something was
 enumerated or denumerated, and also to provide an interface in which
 other programs can connect to the printer.
 
+
+* extra-credit to-do list
+** TODO use GDBus via gi instead of libdbus via python-dbus
+to be future proof
+** TODO clean up DBUS usage in accordance to whatever is best practice
+whatever that may be
 * radical architecting
 Idk why I threw in the word "radical".  Sounds cool though.
 

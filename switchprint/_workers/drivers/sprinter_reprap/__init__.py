@@ -111,3 +111,42 @@ class Driver(DriverBase):
         time.sleep(1)
         self.post = "".join(self.__s.readlines()).strip()        
         self.info = "".join(self.__write("M115", True))
+
+
+    #### printer control functions ###
+
+    def debug(self, command):
+        """Send a raw command to the printer and return its
+        response.""" 
+        return "".join(self.__write(command, True))
+        
+
+    def home(self, x_axis=True, y_axis=True, z_axis=True):
+        """Moves the named axises until they trigger their
+        endstops."""
+    
+        if x_axis and y_axis and z_axis:
+            self.__write("G28", True)
+        elif x_axis or y_axis or z_axis:
+            cmd = ["G28"]
+            if x_axis:
+                cmd.append("X0")
+            if y_axis:
+                cmd.append("Y0")
+            if z_axis:
+                cmd.append("Z0")
+            self.__write(" ".join(cmd), True)
+
+    
+    def relative_mode(self):
+        self.__write("G91")
+
+
+    def absolute_mode(self):
+        self.__write("G90")
+
+
+    def move(self, x=0, y=0, z=0):
+        cmd = "G0 X{0} Y{1} Z{2}".format(x, y, z)
+        self.__write(cmd)
+

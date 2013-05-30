@@ -61,7 +61,28 @@ class PrintServer(dbus.service.Object):
         self.status = "ready"
         print "Printer Reconnected:", self.__name
         # TODO trigger an on_disconect or on_status_change signal
-        
+
+    @dbus.service.method('org.voxelpress.hardware', in_signature='s', out_signature='s')
+    def debug(self, command):
+        return str(self.__driver.debug(command))
+
+    @dbus.service.method('org.voxelpress.hardware', in_signature='bbb')
+    def home(self, x_axis, y_axis, z_axis):
+        self.__driver.home(x_axis, y_axis, z_axis)
+
+    @dbus.service.method('org.voxelpress.hardware')
+    def relative_mode(self):
+        self.__driver.relative_mode()
+
+    @dbus.service.method('org.voxelpress.hardware')
+    def absolute_mode(self):
+        self.__driver.absolute_mode()
+    
+    @dbus.service.method('org.voxelpress.hardware', in_signature='ddd')
+    def move(self, x, y, z):
+        self.__driver.move(x, y, z)
+    
+
 
 def start_server_loop(bus_type, device_path, printer_uuid, driver):
 

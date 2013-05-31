@@ -22,6 +22,7 @@ import dbus, dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 
 import monitors
+from switchprint._workers.common import list_printers
 
 
 class SwitchBoard(dbus.service.Object):
@@ -38,6 +39,26 @@ class SwitchBoard(dbus.service.Object):
             "org.voxelpress.hardware", bus=self.__bus)
         dbus.service.Object.__init__(
             self, bus_name, "/org/voxelpress/hardware")
+
+    @dbus.service.method("org.voxelpress.hardware", in_signature='s')
+    def worker_new_printer(self, printer_uuid):
+        """Called by a worker subprocess when it creates a new
+        PrintServer instance."""
+        self.new_printer_notification(printer_uuid)
+        
+    @dbus.service.signal(dbus_interface='org.voxelpress.hardware', signature='s')
+    def new_printer_notification(self, printer_uuid):
+        """Signals when a new printer is available."""
+        pass
+
+    @dbus.service.method("org.voxelpress.hardware", out_signature='as')
+    def get_printers(self):
+        """Called by a worker subprocess when it creates a new
+        PrintServer instance."""
+        printers = []
+        for namespace in list_printers(self.__bus):
+            printers.append(namespace.split(".")[-1][1:].replace("_", "-"))
+        return dbus.Array(printers)
         
 
 def start_daemon():

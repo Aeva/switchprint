@@ -104,5 +104,10 @@ def start_server_loop(bus_type, device_path, printer_uuid, driver):
         prox.force_reconnect(device_path, reconnect_args)
     else:
         server = PrintServer(bus, device_path, printer_uuid, driver)
+
+        # notify the main process that a new printer exists
+        switchboard = bus.get_object(
+            "org.voxelpress.hardware", "/org/voxelpress/hardware")
+        switchboard.worker_new_printer(str(printer_uuid))
         main_loop.run()
 

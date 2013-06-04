@@ -31,14 +31,19 @@ class PrintServer(dbus.service.Object):
 
         self.__device_path = device_path
         self.__driver = driver
-
-        self.status = "ready"
+        self.status = None
 
         self.__path = path_from_uuid(printer_uuid)
         self.__name = name_from_uuid(printer_uuid)
         bus_name = dbus.service.BusName(self.__name, bus=bus)
         print "Printer Online:", self.__name
         dbus.service.Object.__init__(self, bus_name, self.__path)
+        self.on_state_change("ready")
+
+    @dbus.service.signal(dbus_interface='org.voxelpress.hardware', signature='s')
+    def on_state_change(self, state):
+        """Signals when the printer's status changes."""
+        self.status = state
 
     @dbus.service.method('org.voxelpress.hardware', out_signature='b')
     def verify_disconnect(self, device_path):
@@ -46,11 +51,9 @@ class PrintServer(dbus.service.Object):
         printer, then act accordingly."""
 
         if device_path == self.__device_path:
-            self.status = "offline"
+            self.on_state_change("offline")
             print "Printer Offline:", self.__name
-            # TODO trigger an on_disconect or on_status_change signal
             return True
-
         else:
             return False
 
@@ -58,10 +61,9 @@ class PrintServer(dbus.service.Object):
     def force_reconnect(self, device_path, reconnect_args):
         self.__device_path = device_path
         self.__driver.informed_reconnect(*json.loads(reconnect_args))
-        self.status = "ready"
+        self.on_state_change("ready")
         print "Printer Reconnected:", self.__name
-        # TODO trigger an on_disconect or on_status_change signal
-
+        
     @dbus.service.method('org.voxelpress.hardware', in_signature='s', out_signature='s')
     def debug(self, command):
         return str(self.__driver.debug(command))

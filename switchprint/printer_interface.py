@@ -28,6 +28,13 @@ class PrinterInterface:
         self.__path = "/" + self.__name.replace(".", "/")
         self.__proxy = get_bus().get_object(self.__name, self.__path)
         self.uuid = uuid.UUID(printer_uuid)
+        self.__proxy.connect_to_signal(
+            "on_state_change",
+            self.on_state_change)
+        self.on_state_change("ready")
+
+    def on_state_change(self, state):
+        pass
 
     def home(self, x_axis=True, y_axis=True, z_axis=True):
         self.__proxy.home(x_axis, y_axis, z_axis)

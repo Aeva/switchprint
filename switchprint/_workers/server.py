@@ -87,6 +87,10 @@ class PrintServer(dbus.service.Object):
     @dbus.service.method('org.voxelpress.hardware')
     def motors_off(self):
         self.__driver.motors_off()
+
+    @dbus.service.method('org.voxelpress.hardware', out_signature='s')
+    def get_temperature(self):
+        return str(self.__driver.get_temperature())
     
 
 

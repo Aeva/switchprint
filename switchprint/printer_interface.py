@@ -33,6 +33,9 @@ class PrinterInterface:
             self.on_state_change)
         self.on_state_change("ready")
 
+    def debug(self, command):
+        return self.__proxy.debug(command)
+
     def on_state_change(self, state):
         pass
 
@@ -50,3 +53,6 @@ class PrinterInterface:
 
     def motors_off(self):
         self.__proxy.motors_off()
+
+    def get_temperature(self):
+        return self.__proxy.get_temperature()

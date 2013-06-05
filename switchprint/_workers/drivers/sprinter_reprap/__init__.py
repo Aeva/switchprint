@@ -60,8 +60,10 @@ class Driver(DriverBase):
             data = []
             while True:
                 data += self.__s.readlines()
-                if data and data[-1].strip() == "ok":
-                    data.pop()
+                if data and data[-1].strip().startswith("ok"):                    
+                    extra = data.pop().strip()[2:]
+                    if extra:
+                        data.append(extra)
                     return map(str.strip, data)
                 else:
                     time.sleep(.05)
@@ -151,3 +153,7 @@ class Driver(DriverBase):
     def motors_off(self):
         self.__write("G18")
         self.__write("M84")
+
+
+    def get_temperature(self):
+        return self.__write("M105", True)[0]

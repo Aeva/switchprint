@@ -90,6 +90,8 @@ class Driver(DriverBase):
                         return True
             except ValueError:
                 continue
+            except IOError:
+                continue
 
     def inform_reconnect(self):
         """This function is called by a worker subprocess when a

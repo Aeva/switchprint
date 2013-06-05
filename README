@@ -13,10 +13,11 @@ $ sudo apt-get install python-gudev python-dbus python-gobject
 
 python-serial and python-daemon are also dependencies, but they will
 be installed automagically via distutils when you install this
-package.
+package.  Also, you need python-setuptools to finish the installation
+process, so grab that as well.
 
 You can install them manually on debian like so:
-$ sudo apt-get install python-serial python-daemon
+$ sudo apt-get install python-serial python-daemon python-setuptools
 
 Once you have the dependencies installed, install switchprint like so
 $ git clone git@github.com:Aeva/switchprint.git

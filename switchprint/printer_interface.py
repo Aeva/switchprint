@@ -36,7 +36,7 @@ class PrinterInterface:
     def on_state_change(self, state):
         pass
 
-    def home(self, x_axis=True, y_axis=True, z_axis=True):
+    def home(self, x_axis=False, y_axis=False, z_axis=False):
         self.__proxy.home(x_axis, y_axis, z_axis)
 
     def relative_mode(self):
@@ -47,3 +47,6 @@ class PrinterInterface:
 
     def move(self, x, y, z):
         self.__proxy.move(x, y, z)
+
+    def motors_off(self):
+        self.__proxy.motors_off()

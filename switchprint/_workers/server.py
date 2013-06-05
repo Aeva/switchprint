@@ -83,6 +83,10 @@ class PrintServer(dbus.service.Object):
     @dbus.service.method('org.voxelpress.hardware', in_signature='ddd')
     def move(self, x, y, z):
         self.__driver.move(x, y, z)
+
+    @dbus.service.method('org.voxelpress.hardware')
+    def motors_off(self):
+        self.__driver.motors_off()
     
 
 

@@ -121,21 +121,18 @@ class Driver(DriverBase):
         return "".join(self.__write(command, True))
         
 
-    def home(self, x_axis=True, y_axis=True, z_axis=True):
+    def home(self, x_axis=False, y_axis=False, z_axis=False):
         """Moves the named axises until they trigger their
         endstops."""
-    
-        if x_axis and y_axis and z_axis:
-            self.__write("G28", True)
-        elif x_axis or y_axis or z_axis:
-            cmd = ["G28"]
-            if x_axis:
-                cmd.append("X0")
-            if y_axis:
-                cmd.append("Y0")
-            if z_axis:
-                cmd.append("Z0")
-            self.__write(" ".join(cmd), True)
+
+        cmd = ["G28"]
+        if x_axis:
+            cmd.append("X0")
+        if y_axis:
+            cmd.append("Y0")
+        if z_axis:
+            cmd.append("Z0")
+        self.__write(" ".join(cmd), True)
 
     
     def relative_mode(self):
@@ -150,3 +147,7 @@ class Driver(DriverBase):
         cmd = "G0 X{0} Y{1} Z{2}".format(x, y, z)
         self.__write(cmd)
 
+
+    def motors_off(self):
+        self.__write("G18")
+        self.__write("M84")

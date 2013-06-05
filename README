@@ -20,7 +20,7 @@ You can install them manually on debian like so:
 $ sudo apt-get install python-serial python-daemon python-setuptools
 
 Once you have the dependencies installed, install switchprint like so
-$ git clone git@github.com:Aeva/switchprint.git
+$ git clone https://github.com/Aeva/printcontrol.git
 $ cd switchprint
 $ sudo python setup.py install
 

@@ -26,7 +26,7 @@ class PrinterInterface:
     def __init__(self, printer_uuid):
         self.__name = "org.voxelpress.hardware._"+printer_uuid.replace("-","_")
         self.__path = "/" + self.__name.replace(".", "/")
-        self.__proxy = get_bus().get_object(self.__name, self.__path)
+        self.__proxy = get_bus().get_object(self.__name, self.__path, introspect=False)
         self.uuid = uuid.UUID(printer_uuid)
         self.__proxy.connect_to_signal(
             "on_state_change",

@@ -230,3 +230,230 @@ anything like gcode.
 ** printer control lib
 switchprint may as well just provide an api thats easy to use that
 encapsulates the dbus api.
+
+* radical architecting - part 2
+** huge brain dump
+Big question: where to config profiles go?
+
+It seems reasonable that switchprint should also be able to provide on
+a driver level slicing faculties.  Also, it might actually not be a
+bad idea to treat svg as the slicing target in voxelpress proper, and
+have a "compiler" aspect that converts svg slices to gcode or whatever
+is applicable.
+
+Additionally, it given that firmwares may have some more specific
+nuances that might merit separate drivers beyond the generic sprinter
+driver, its likely that many of them will consume a common language of
+control.  Thus, it might be useful to have that functionality
+offloaded into its own entity, such as "slicing engine" or "control
+language" or something.
+
+Its also worth noting that control languages can be converted from one
+to another so long as they describe more or less the same general
+thing (eg, gocde describes paths).  Thus, the slicing engine doesn't
+really need to be limited by the language it exports, when conversion
+should be possible.
+
+Another question is, should any of this be done from within
+switchprint, or should this perhaps be offloaded into a separate
+library that is used by switchprint? ("printerglot" might be a cool
+name for it)
+
+Also, worth noting that most of the issue here is actually just
+handling things like sd3 and whatever repetier uses, which as I
+understand it, the former is essentially compressed gcode, and the
+later is just an alternative protocol for transmitting gcode than just
+the standard serial plaintext thing.
+
+*** as an external library
+My first instinct is to make this a vala library and expose its
+functionality via vapi, so that it can be used anywhere and by anybody.
+Whether or not thats actually a good idea is another story.
+
+My second instinct is that this is probably the sort of task that
+python may very well be pretty well suited for.
+
+**** What would the library be responsible for anyway?
+The library would provide another layer of abstraction into the stack
+that switchprint provides.  This layer would represent slicing, and
+possibly high-level communication with the printers.  High level
+communication should refer to common tasks, like manual control and
+sending print jobs.  Low level communication refers to the layer that
+translates all of that into something the printer can actually use.
+
+But an integral part of this is configuration profiles, which doesn't
+neatly fit into either of those categories.  Its tempting to say that
+a config profile is a layer between those, possibly in the "driver"
+layer itself.  However one of the central features of switchprint is
+to provide config profiles based on well-known hardware profiles
+reported by the driver layer.
+
+***** lets look at this another way
+There are at least two servers running (assuming at least one printer
+was plugged in at some point while switchprint is running) - the
+switchboard, which at this point I don't think does much more than the
+udev stuff, and the dbus services for the individual printers.  The
+dbus services are encapsulated in their own subprocesses, partly
+because python threading is terrible, partly as a preemptive measure
+to isolate the damage unstable code can cause, and partly because I
+could't figure out how to get the depricated python-dbus library to
+play nice with threads until after I ruled it out as a possibility.
+But I digress,
+
+The non-switchboard subprocesses represent the entire printer,
+inclusive of its configuration, state reporting, driver, and so on.
+This is the very top-level entity, in terms of abstraction.
+
+However, a print job may not necessarily be contained within the
+printer.  With proxies, a print job itself may actually correspond
+with several conceptual printers.  While all of this functionality
+does not need to be implemented right away, it is useful to consider
+to allow for an emergent design to make it straight forward to
+implement in the future.
+
+Thus, a proxy may either specify that slicing should happen locally to
+it, or it might specify that slicing should be deffered to the server
+it points to.  This information is likely provided by the end server,
+in the config file that defines the parameters for which it expects
+the proxy to behave by.  Such as "defer slicing to host" vs "slice
+locally".  The logical printer object must be able to report its
+slicing state and other print statistics, ideally in a fashion that is
+condusive to proxies functioning in a seamless way.  Config lockdown
+would be another good admin option.
+
+There should probably be an /etc/voxelpress/ folder, with further
+subfolders that handle the storage of printer settings for when the
+defaults are overridden.  These could be pickles or json objects, for
+volatile settings, but there should also be an ini style file that
+contains admin-specific settings (permissions, sharing behavior, etc)
+Without a doubt, this should be logically represented as a settings
+object, which itself should include dbus functionality for host
+software to hook into.  I'll leave the dbus functionality up in the
+air for now, but it probably just involves passing around a json blob
+that explains the structure of the settings in a way thats both useful
+for slicing as it is for producing a nice gui for the end user.
+
+*** as internal functionality
+the functionality described by the 'internal library' section could
+just as well be an internal sub-module.  Which now that I think about
+it, is likely the best way to go, and people could still target it
+with their code if they wanted to.
+
+
+
+
+*** with all of that in mind
+Here's what I have so far:
+
+**** configuration
+***** storage
+Configuration is stored on the disk, populated from whatever defaults
+the driver intially decides is best.  Defaults should be stored in
+this project's module somewhere.  Custom settings are stored in
+/etc/voxelpress/ or in ~/.voxelpress/, depending on which mode the
+daemon is being run in.  (which, now that I think of it, which bus is
+being used should probably not be passed to every trucking class
+contstructor function, but divined through some kind of clever
+dependency injection thing.  Best yet, is if the subprocesses can
+figure it out from the environment variable stuff that dbus makes.
+***** access
+Access should be provided through an object, that is instanced by the
+service that corresponds to a printer.  The object is told the
+printer's uuid, which user its running under, and anything else it can
+provide in terms of selecting defaults.  The way this should probably
+work is the driver should have a "config_divination" function or
+something which returns stats about the printer.
+***** format
+There are several layers of config that I think are likely: common
+settings, class specific setings, and slicer specific settings.
+
+Printer specific settings include the following:
+ - supported slicing engines
+ - printable volume
+ - printer classification (eg, fff, sla, dlp, etc)
+
+Class specific settings include the following (if the printer is fff):
+ - number of print heads and offests
+ - if the print bed is heated or not
+ - acceptable temperature ranges
+ - material presets (eg, temperature settings for PLA, ABS, etc)
+
+Slicer specific settings, which are specific to which and what slicing
+engine.
+
+Well-known config profiles will share the same format as the
+overrides, to aid in their creation.  The structure of such will
+probably be things like:
+
+/lulzbot/taz/
+ - printer.json
+/lulzbot/taz/classes/
+ - standard.json
+ - polyschnozzle.json
+ - dualstrusion.json
+/lulzbot/taz/slicing/
+ - slic3r_high_quality.json
+ - slic3r_high_speed.json
+
+**** slicing engines
+A slicing engine is a class that provides the following functionality:
+ - default config json generator
+ - 
+
+
+** structural changes, important points, etc
+
+ - The class that comprises of the dbus interface for the interface
+   represents the entirety of the logical representation of the
+   printer.
+
+ - Print jobs are not necessarily specific to a given printer.
+
+ - Persistant configs need to be represented by a class object, which
+   is instanced on a the printer's class, much as the driver object
+   is.
+
+ - Which bus object is to be used should be derrived more
+   intelligently, rather than passing it through every flipping
+   constructor there is.  Whatever provides this runtime information
+   should also indicate whether or not configs should go in
+   "/etc/voxelpress" or "~/.voxelpress".
+
+ - Config defaults should be stored in the switchprint module
+   somewhere, which suggests to me that this merits an entire
+   subsystem for configuration stuff, even if its a passive one (eg,
+   not a separate service, but relied upon by many services).
+
+ - The print pipeline should happen on one of the subprocesses that
+   corresponds to a printer (either a proxy subprocess, or on the
+   printer's subprocess itself).  Printjobs are printer-specific, so
+   they probably don't belong on the switchboard.  However, they are
+   domain inspecific, so that means they may span several different
+   servers, and have the capacity to be admin'd at any one of them.
+
+ - The switchboard is used for reporting new printers to hosts, but
+   other than that isn't really useful.  It would be interesting if
+   multiple printers could fire the same dbus signal, but I'm guessing
+   it doesn't actually work that way.  The possibility of deprecating
+   the switchboard seems like a good idea to me, especially if hooking
+   into a hardware discovery system on another platform is
+   incompatible with the gobject event loop (though I find that
+   somewhat unlikely, because at the worst case scenario, I can employ
+   threads).
+
+*** A good start
+**** config subsystem
+... would probably be to decouple all the whole passing dbus session
+type thing from everything, and creating the config subsystem.
+
+The config subsystem should determine appropriate environmental
+information, like where config directories should be read and written
+from.  It should also determine if switchprint is *already running*,
+first by trying to detect it on the system bus, and then on the
+session bus.  That should be how the subprocesses find out which bus
+they should connect to, but also to determine if the daemon itself
+should be launched or not.
+
+What would be really swell, is if host programs could actually launch
+the switchprint daemon through this mechanism if it isn't already
+running.  This would make the dev side of things a truck ton easier.

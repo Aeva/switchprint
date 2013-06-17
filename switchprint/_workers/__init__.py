@@ -20,11 +20,11 @@ import os
 import subprocess
 
 
-def create(event, bus_type, *args):
+def create(event, *args):
     """Creates a worker subprocess to handle a particular event so
     they can be handled outside of the main process."""
 
     assert event in ("on_connect", "on_disconnect")
     script = os.path.join(os.path.split(__file__)[0], event+".py")
-    _args = ["python", script] + [bus_type] + map(str, list(args))
+    _args = ["python", script] + map(str, list(args))
     subprocess.Popen(_args)

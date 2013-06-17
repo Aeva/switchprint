@@ -18,6 +18,7 @@
 
 import uuid
 import hashlib
+from switchprint import common
 
 
 def checksum_uuid(text):
@@ -59,8 +60,8 @@ def name_from_uuid(printer_uuid):
     return namespace + str(printer_uuid).replace("-", "_")
     
 
-def list_printers(bus):
+def list_printers():
     """List all currently existing Printer Servers."""
 
-    return [str(v) for v in bus.list_names()
+    return [str(v) for v in common.get_bus().list_names()
             if str(v).startswith("org.voxelpress.hardware.")]

@@ -19,30 +19,13 @@
 import uuid
 import dbus
 from switchprint._workers import common as _common
-
-
-BUS = None
-def get_bus():
-    """Determine which bus, if any, has org.voxelpress.hardware."""
-    global BUS
-
-    if BUS:
-        return BUS
-    
-    for bus in [dbus.SessionBus(), dbus.SystemBus()]:
-        names = [str(v) for v in bus.list_names()]
-        if names.count("org.voxelpress.hardware"):
-            BUS = bus
-            return bus
-
-    if not BUS:
-        raise RuntimeError("switchprint daemon is not currently running.")
+from switchprint.common import get_bus
 
 
 def get_printers():
     bus = get_bus()
     printers = {}
-    for namespace in _common.list_printers(bus):
+    for namespace in _common.list_printers():
         printer_uuid = uuid.UUID(namespace.split(".")[-1][1:].replace("_", "-"))
         object_path = "/" + namespace.replace(".", "/")
         proxy = bus.get_object(namespace, object_path)

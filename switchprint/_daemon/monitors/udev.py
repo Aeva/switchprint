@@ -25,8 +25,7 @@ class HardwareMonitor():
     """This class implements the hardware monitor for systems in which
     udev is available.  Presumably that means just Linux."""
     
-    def __init__(self, bus_type):
-        self.__bus_type = bus_type
+    def __init__(self):
         self.__udev = gudev.Client(["tty", "usb/usb_device"])
         self.__udev.connect("uevent", self.__udev_callback, None)
         self.__scan()
@@ -45,10 +44,10 @@ class HardwareMonitor():
             self.__on_disconnect("usbACM", usb_path)
 
     def __on_connect(self, hint, usb_path, tty_path, hw_info):
-        _workers.create("on_connect", self.__bus_type, hint, usb_path, tty_path, hw_info)
+        _workers.create("on_connect", hint, usb_path, tty_path, hw_info)
 
     def __on_disconnect(self, hint, usb_path):
-        _workers.create("on_disconnect", self.__bus_type, hint, usb_path)
+        _workers.create("on_disconnect", hint, usb_path)
 
     def __scan(self):
         """Iterate over available serial ports and try to find repraps."""

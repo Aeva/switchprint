@@ -21,13 +21,13 @@ import gobject
 import dbus, dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 from common import path_from_uuid, name_from_uuid, list_printers
-
+from switchprint import common
 
 class PrintServer(dbus.service.Object):
     """
     """
 
-    def __init__(self, bus, device_path, printer_uuid, driver):
+    def __init__(self, device_path, printer_uuid, driver):
 
         self.__device_path = device_path
         self.__driver = driver
@@ -35,7 +35,7 @@ class PrintServer(dbus.service.Object):
 
         self.__path = path_from_uuid(printer_uuid)
         self.__name = name_from_uuid(printer_uuid)
-        bus_name = dbus.service.BusName(self.__name, bus=bus)
+        bus_name = dbus.service.BusName(self.__name, bus=common.get_bus())
         print "Printer Online:", self.__name
         dbus.service.Object.__init__(self, bus_name, self.__path)
         self.on_state_change("ready")
@@ -94,18 +94,13 @@ class PrintServer(dbus.service.Object):
     
 
 
-def start_server_loop(bus_type, device_path, printer_uuid, driver):
+def start_server_loop(device_path, printer_uuid, driver):
 
     # do this before creating any bus object!
     main_loop = gobject.MainLoop()
     DBusGMainLoop(set_as_default=True)
 
-    if bus_type == "session":
-        bus = dbus.SessionBus()
-    elif bus_type == "system":
-        bus = dbus.SystemBus()
-
-    printers = list_printers(bus)
+    printers = list_printers()
     check_name = name_from_uuid(printer_uuid)
     if printers.count(check_name):
         reconnect_args = json.dumps(driver.inform_reconnect())
@@ -113,10 +108,10 @@ def start_server_loop(bus_type, device_path, printer_uuid, driver):
         prox = bus.get_object(check_name, path)
         prox.force_reconnect(device_path, reconnect_args)
     else:
-        server = PrintServer(bus, device_path, printer_uuid, driver)
+        server = PrintServer(device_path, printer_uuid, driver)
 
         # notify the main process that a new printer exists
-        switchboard = bus.get_object(
+        switchboard = common.get_bus().get_object(
             "org.voxelpress.hardware", "/org/voxelpress/hardware")
         switchboard.worker_new_printer(str(printer_uuid))
         main_loop.run()

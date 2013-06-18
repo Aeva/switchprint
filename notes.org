@@ -442,7 +442,7 @@ A slicing engine is a class that provides the following functionality:
    threads).
 
 *** A good start
-**** config subsystem
+**** DONE config subsystem
 ... would probably be to decouple all the whole passing dbus session
 type thing from everything, and creating the config subsystem.
 
@@ -457,3 +457,6 @@ should be launched or not.
 What would be really swell, is if host programs could actually launch
 the switchprint daemon through this mechanism if it isn't already
 running.  This would make the dev side of things a truck ton easier.
+
+**** TODO update how the sprinter driver does read/writes
+... by having it happen in a thread.

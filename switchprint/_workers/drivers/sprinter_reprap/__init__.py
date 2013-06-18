@@ -16,8 +16,9 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys, os
-import serial, time
+import sys, os, time
+import gobject
+import serial
 from switchprint._workers.drivers.common import DriverBase
 
 
@@ -39,6 +40,22 @@ def control_ttyhup(port, disable_hup):
             os.system("stty -F %s hup" % port)
 
 
+class Thermistor:
+    """Represents the state of a thermistor on a Reprap."""
+    
+    def __init__(self, name):
+        self.temperature = 0
+        self.target = None
+        self.name = name
+
+    def update(self, temp, target):
+        temp, target = map(float, (temp, target))
+        if temp > 10:
+           self.temperature = temp
+        self.target = target 
+        print "{0}: {1}c / {2}c".format(self.name, self.temperature, self.target)
+        
+
 class Driver(DriverBase):
     """Driver for reprap-style printers running the sprinter firmware."""
 
@@ -46,6 +63,9 @@ class Driver(DriverBase):
         self.__s = None
         self.__port = None
         self.__uuid = "butts"
+        self.__state = None
+        self.bed_temp = Thermistor("bed")
+        self.tool_temp = Thermistor("tool")
 
     def reset(self):
         if self.__s:
@@ -67,6 +87,88 @@ class Driver(DriverBase):
                     return map(str.strip, data)
                 else:
                     time.sleep(.05)
+
+    def change_state(self, new_state):
+        """
+        Changes the state of the listener event loop and thus the
+        timeout delay as well.  "running" means that the printer has a
+        buffer of commands that it is working through, "watching"
+        means that the printer cannot safely stop monitoring itself,
+        and "idle" means that the event loop is not running.
+        """
+
+        assert new_state in ["active", "watching", "idle"]
+        timeout = None
+        if new_state != self.__state:
+            old_state = self.__state
+            self.__state = new_state
+
+            if old_state == "idle" or old_state == None:
+                self.req_temp()
+                self.listener()
+                
+    def req_temp(self):
+        """
+        Periodically called to request the temperature of the
+        printer.
+        """
+
+        self.__write("M105")
+
+        if self.__state != "idle":
+            gobject.timeout_add(1000, self.req_temp)
+
+    def update_temp(self, line):
+        """Updates the current temperature readings."""
+        parts = line.split(" ")[1:]
+        pairs = zip(parts[:-2:2], parts[1:-2:2])
+        for pair in pairs:
+            temp_id, temp_current = pair[0].split(":")
+            temp_target = pair[1][1:]
+
+            thermistor = None
+            if temp_id == "t":
+                thermistor = self.tool_temp
+            elif temp_id == "b":
+                thermistor = self.bed_temp
+            else:
+                raise NotImplementedError("Uknown tool id: %s"%temp_id)
+            if thermistor:
+                thermistor.update(temp_current, temp_target)
+
+    def listener(self):
+        """
+        The listener function is the body of the event loop that
+        monitors feedback from the printer.
+        """
+
+        for line in self.__s.readlines():
+            line = line.strip().lower()
+            if not line:
+                break
+
+            if line.startswith("debug_"):
+                continue
+
+            if line.startswith("ok") and line.count("t:"):
+                print line
+                self.update_temp(line)
+
+            if line.startswith("error"):
+                # report an error...?
+                raise NotImplementedError("Error handler")
+
+            if line.startswith(("rs", "resend")):
+                # checksum failed, resend line
+                raise NotImplementedError("Resend command")
+
+        delay = None
+        if self.__state == "active":
+            delay = .1
+        elif self.__state == "watching":
+            delay = .5
+        if delay is not None:
+            gobject.timeout_add(int(delay*1000), self.listener)
        
     def auto_detect(self, port):
         """Called by a hardware monitor durring a hardware connect
@@ -87,6 +189,9 @@ class Driver(DriverBase):
                         self.__baud = baud
                         self.post = post
                         self.info = "".join(self.__write("M115", True))
+                        #self.__write("M104 S100") # TEST REMOVE ME
+                        #self.__write("M140 S60") # TEST REMOVE ME
+                        self.change_state("active")
                         return True
             except ValueError:
                 continue

@@ -39,6 +39,39 @@ class PrintServer(dbus.service.Object):
         print "Printer Online:", self.__name
         dbus.service.Object.__init__(self, bus_name, self.__path)
         self.on_state_change("ready")
+        self.__driver.connect_events(self)
+
+    @dbus.service.signal(dbus_interface='org.voxelpress.hardware', signature='s')
+    def on_report(self, blob):
+        """'Blob' is a dictionary of semi-arbitrary information.
+        Because what is pushed in this command may be different
+        between different classes of printer, the data will just be
+        serialized as a json string.
+
+        The contents of the blob will *probably* look something like
+        this: 
+
+        blob = {
+          "thermistors" : {
+            "tools" : [ 230, 160 ],
+            "bed" : 0,
+          },
+          
+          "job_status" : {
+            "line_num" : 12345,
+            "percent" : 63,
+            "x" : 123,
+            "y" : 234,
+            "z" : 10,
+          },
+        }
+
+        This signal is for reporting metrics about the printer's
+        state.  Error messages should be reported through a different
+        signal.
+        """
+        
+        return json.dumps(blob)
 
     @dbus.service.signal(dbus_interface='org.voxelpress.hardware', signature='s')
     def on_state_change(self, state):

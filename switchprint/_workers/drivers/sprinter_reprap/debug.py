@@ -19,7 +19,7 @@ SERIAL = SerialConnection("/dev/ttyACM0")
 #    LINE += 1
 #    return p.result
 
-proto = SprinterProtocol(SERIAL)
+proto = SprinterProtocol(SERIAL, None)
 
 test = """
 M105

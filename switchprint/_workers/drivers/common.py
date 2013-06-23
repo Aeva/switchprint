@@ -23,6 +23,11 @@ class DriverBase:
 
     uuid = None
 
+    def connect_events(self, server):
+        """Called when the driver is attached to a print server, so
+        that the driver may call signals on the server object."""
+        raise NotImplementedError()
+
     def auto_detect(self, *args, **kargs):
         """Called by a hardware monitor durring a hardware connect
         event.  Return True if this driver claims the device.

@@ -19,7 +19,7 @@
 import json, time
 from switchprint._workers.drivers.common import DriverBase
 from connection import SerialConnection, ConnectionException
-from protocol import SprinterProtocol
+from monitor import SprinterMonitor
 
 
 METADATA = {
@@ -33,8 +33,16 @@ class Driver(DriverBase):
 
     def __init__(self):
         self.serial = None
-        self.proto = None
+        self.monitor = None
+        self.__signals = None
 
+    def connect_events(self, server):
+        """Called when the driver is attached to a print server, so
+        that the driver may call signals on the server object."""
+
+        self.__signals = server
+        self.monitor = SprinterMonitor(self.serial, server)
+        
     def auto_detect(self, port):
         """Called by a hardware monitor durring a hardware connect
         event.  Return True if this driver claims the device.
@@ -43,7 +51,6 @@ class Driver(DriverBase):
         try:
             self.serial = SerialConnection(port)
             self.info = json.dumps(self.serial.info)
-            self.proto = SprinterProtocol(self.serial, self)
             return True
         except ConnectionException:
             return False
@@ -65,8 +72,7 @@ class Driver(DriverBase):
 
         self.serial = SerialConnection(port, baud)
         self.info = json.dumps(self.serial.info)
-        self.proto = SprinterProtocol(self.serial, self)
-        
+        self.connect_events(self.__signals)
 
     #### printer control functions ###
         
@@ -83,21 +89,21 @@ class Driver(DriverBase):
         if z_axis:
             cmd.append("Z0")
             
-        self.proto.request(" ".join(cmd))
+        self.monitor.request(" ".join(cmd))
 
     
     def relative_mode(self):
-        self.proto.request("G91")
+        self.monitor.request("G91")
 
 
     def absolute_mode(self):
-        self.proto.request("G90")
+        self.monitor.request("G90")
 
 
     def move(self, x=0, y=0, z=0):
         cmd = "G0 X{0} Y{1} Z{2}".format(x, y, z)
-        self.proto.request(cmd)
+        self.monitor.request(cmd)
 
 
     def motors_off(self):
-        self.proto.request("M84")
+        self.monitor.request("M84")

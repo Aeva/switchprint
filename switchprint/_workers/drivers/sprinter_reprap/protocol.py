@@ -16,6 +16,9 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import time
+
+
 class SprinterPacket:
     """
     Represents a line of gcode being sent to the printer.
@@ -73,7 +76,7 @@ class SprinterProtocol:
     Implements a mechanism in which commands may be sent to the
     printer in an orderly fashion.  Does state tracking."""
 
-    def __init__(self, connection):
+    def __init__(self, connection, callbacks):
         self.__serial = connection
         self.info = self.__serial.info
 
@@ -82,6 +85,8 @@ class SprinterProtocol:
         self.interrupts = []
         self.buffer = []
         self.pending = None
+
+        self.hold_start = None
 
     def request(self, soup, interrupt=False):
         """Takes a block of text, cleans it, and then adds it to the
@@ -143,7 +148,9 @@ class SprinterProtocol:
             self.buffer = self.__clean(soup) + self.buffer
 
         state = 'ok'
-        while state == 'ok' and self.buffer:
+        hold_time = 0
+        self.hold_start = time.time()
+        while state == 'ok' and self.buffer and hold_time < 1:
             # finally, stream the remaining commands off the buffer
             # until something trips:
             command = self.buffer.pop(0)
@@ -158,6 +165,8 @@ class SprinterProtocol:
             else:
                 self.__process_response(packet.result)
                 self.line += 1
+                hold_time = time.time() - self.hold_start
+                print hold_time
 
     def __clean(self, soup):
         """Parses out valid gcode from a block of text.  Returns the

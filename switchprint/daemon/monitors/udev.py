@@ -17,7 +17,7 @@
 
 
 import os
-from switchprint import _workers
+from switchprint import workers
 import gudev
 
 
@@ -44,10 +44,10 @@ class HardwareMonitor():
             self.__on_disconnect("usbACM", usb_path)
 
     def __on_connect(self, hint, usb_path, tty_path, hw_info):
-        _workers.create("on_connect", hint, usb_path, tty_path, hw_info)
+        workers.create("on_connect", hint, usb_path, tty_path, hw_info)
 
     def __on_disconnect(self, hint, usb_path):
-        _workers.create("on_disconnect", hint, usb_path)
+        workers.create("on_disconnect", hint, usb_path)
 
     def __scan(self):
         """Iterate over available serial ports and try to find repraps."""

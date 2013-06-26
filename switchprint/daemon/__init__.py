@@ -21,7 +21,7 @@ import dbus, dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 
 import monitors
-from switchprint._workers.common import list_printers
+from switchprint.workers.common import list_printers
 from switchprint import common
 
 

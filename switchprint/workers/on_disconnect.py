@@ -18,7 +18,7 @@
 
 import sys
 import dbus
-from switchprint._workers.common import list_printers
+from switchprint.workers.common import list_printers
 from switchprint import common
 
 

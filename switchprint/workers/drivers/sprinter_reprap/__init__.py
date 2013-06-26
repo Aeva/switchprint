@@ -17,7 +17,7 @@
 
 
 import json, time
-from switchprint._workers.drivers.common import DriverBase
+from switchprint.workers.drivers.common import DriverBase
 from connection import SerialConnection, ConnectionException
 from monitor import SprinterMonitor
 

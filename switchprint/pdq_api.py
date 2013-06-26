@@ -18,7 +18,7 @@
 
 import uuid
 import dbus
-from switchprint._workers import common as _common
+from switchprint.workers import common as _common
 from switchprint.common import get_bus
 
 

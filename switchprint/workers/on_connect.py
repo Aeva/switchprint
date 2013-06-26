@@ -17,9 +17,9 @@
 
 
 import sys
-from switchprint._workers.common import assign_uuid
-from switchprint._workers import drivers
-from switchprint._workers.server import start_server_loop
+from switchprint.workers.common import assign_uuid
+from switchprint.workers import drivers
+from switchprint.workers.server import start_server_loop
 
 
 def on_connect(handler, *event_args):

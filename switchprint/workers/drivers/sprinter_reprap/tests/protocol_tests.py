@@ -17,6 +17,8 @@
 
 
 import re
+import time
+from threading import Thread
 from ..protocol import SprinterPacket, SprinterProtocol
 
 
@@ -25,10 +27,11 @@ class MockConnection():
     Creates a mock connection object for testing the implementation of
     the communication protocol.  "lineset" is a list of lists,
     indicating what should be added to the readlines buffer after each
-    write call.
+    write call.  If "lineset" is None, then this will append ['ok\n']
+    into the buffer instead.
     """
 
-    def __init__(self, lineset):
+    def __init__(self, lineset=None):
         self.info = {
             "extruder-count" : 2,
             }
@@ -44,16 +47,21 @@ class MockConnection():
         check to see if the checksum or line number is correct.
         """
 
-        ncode = r'N[0-9]+'
-        cmd = r'( [GMT][0-9]{1,3})'
-        params = r'( [A-Z][0-9]{1,3})*'
-        checksum = r'\*[0-9]{1,3}'
-        pattern = r'^' + ncode + cmd + params + checksum + r'$'
-        assert re.match(pattern, data)
-        assert data.endswith("\n")
+        if not data.startswith("M110"):
+            ncode = r'N[0-9]+'
+            cmd = r'( [GMT][0-9]{1,3})'
+            params = r'( [A-Z][0-9]{1,3})*'
+            checksum = r'\*[0-9]{1,3}'
+            pattern = r'^' + ncode + cmd + params + checksum + r'$'
+            print "##########", data
+            assert re.match(pattern, data)
+            assert data.endswith("\n")
 
         self.hits += 1
-        self.buffer += self.lineset.pop(0)
+        if self.lineset is None:
+            self.buffer += ["ok\n"]
+        elif self.lineset:
+            self.buffer += self.lineset.pop(0)
 
     def readlines(self):
         """
@@ -90,3 +98,45 @@ def packet_resend_test():
 
     # assert that everything is going to be ok
     assert packet.status == "ok"
+
+
+
+
+def buffer_run_test():
+    """Run a bunch of commands through the protocol object and see if
+    it returns."""
+
+    con = MockConnection()
+    proto = SprinterProtocol(con, None)
+
+    soup = """
+M105
+M105
+M105
+M105
+M105
+G28 X0 Y0 Z0
+G0 X30 Y30
+G0 X10 Y10
+G0 X20 Y0
+M105
+M110 N0
+M105
+M110 N100
+G28 X0 Y0 Z0
+G0 X100 Y100
+M105
+M105
+G28 X0 Y0 Z0
+"""
+    
+    def buffer_run():
+        proto.request(soup)        
+        while proto.buffer_status() == "active":
+            proto.execute_requests()
+
+    test_thread = Thread(target = buffer_run)
+    test_thread.run()
+    time.sleep(.5)
+    
+    assert not test_thread.is_alive()

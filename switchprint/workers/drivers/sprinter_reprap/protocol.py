@@ -16,7 +16,7 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import time
+import time, re
 
 
 class SprinterPacket:
@@ -81,6 +81,10 @@ class SprinterProtocol:
         self.info = self.__serial.info
 
         self.tool = 0
+        self.temps = {
+            "b" : 0,
+            "t" : [0],
+            }
         self.line = 1
         self.interrupts = []
         self.buffer = []
@@ -110,21 +114,23 @@ class SprinterProtocol:
         else:
             return "active"
 
-    def request_tool_temp(self, tool):
-        """Notes the current tool, switches to the specified tool,
-        requests its state, and then switches back to whatever tool
-        was before it.  Command returns nothing - the tool state will
-        be pushed durring the read event."""
+    def request_temps(self):
+        """Requests a temperature report for all connected tools as
+        well as the hot plate, where applicable.  Takes care of
+        automatic tool changes, etc.
+        """
 
         def interrupt():
             hold = self.tool
-            soup = "M105"
-            if hold != tool:
-                # only add tool change commands if it is actually
-                # useful to send them.
-                soup = "T{0}\nM105\nT{2}\n".format(tool, hold)    
-            return soup
-
+            count = int(self.info["extruder_count"])
+            tools = [(i+self.tool) % count for i in range(count)]
+            soup = []
+            for tool in tools:
+                if tool != hold:
+                    soup.append("T%s" % tool)
+                soup.append("M105")
+            soup.append("T%s" % hold)
+            return "\n".join(soup)
         self.interrupts.append(interrupt)
 
     def execute_requests(self):
@@ -196,13 +202,22 @@ class SprinterProtocol:
         
     def __process_response(self, response):
         """Read from the socket and call events where appropriate."""
+        
         for line in response:
-            print line
-            if line.startswith("ok T:"):
-                pass
+            simple = line.lower().strip()
 
-            elif line.startswith("echo"):
-                pass
+            if simple.startswith("resend:"):
+                line_num = int(line.split(":")[-1].strip())
+                self.__resend(line_num)
+
+            elif simple.startswith("echo:"):
+                if simple.count("active extruder:"):
+                    # check to see if we changed tools
+                    self.tool = int(simple.split(":")[-1].strip())
+                    # update the temperature readings to make space
+                    # for new tools
+                    while len(self.temps["t"]) < self.tool+1:
+                        self.temps["t"].append(0)
 
             elif line.startswith("Error"):
                 pass
@@ -210,6 +225,19 @@ class SprinterProtocol:
             elif line.startswith("DEBUG_"):
                 pass
 
-            elif line.startswith("Resend:"):
-                line_num = int(line.split(":")[-1].strip())
-                self.__resend(line_num)
+            else:
+                # check for a state report
+
+                # first check to see if the line contains the tool temp
+                tool_temp = re.findall(r"t:[0-9.]+", simple)
+                if tool_temp:
+                    self.temps["t"][self.tool] = \
+                        float(tool_temp[0].split(":")[-1])
+
+                # next check to see if the line contains the bed temp
+                # note that this is usually is on the same line as the
+                # tool temp
+                bed_temp = re.findall(r"b:[0-9.]+", simple)
+                if bed_temp and bed_temp[0] != "b:0":
+                    self.temps["b"] = \
+                        float(bed_temp[0].split(":")[-1])

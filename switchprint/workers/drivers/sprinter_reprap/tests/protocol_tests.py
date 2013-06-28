@@ -33,7 +33,7 @@ class MockConnection():
 
     def __init__(self, lineset=None):
         self.info = {
-            "extruder-count" : 2,
+            "extruder_count" : 2,
             }
         self.hits = 0
         self.lineset = lineset
@@ -140,3 +140,74 @@ G28 X0 Y0 Z0
     time.sleep(.5)
     
     assert not test_thread.is_alive()
+
+
+
+
+def temperature_tracking_test():
+    """Runs a bunch of temperature change commands through the
+    protocol, spoofs the results, and then checks to see if the
+    protocol object tracked the fake temperature reading for all
+    tools."""
+
+    lineset = [
+        ['ok T:100.5 /5.0 B:29.5 /5.0\n'],
+        ['echo:Active Extruder: 1\n', 'ok\n'],
+        ['ok T:500.3 /100.0 B:30.6 /5.0\n'],
+        ]
+    soup = """
+M105 ; temperature request
+T1   ; tool change command
+M105 ; temperature request
+"""
+    con = MockConnection(lineset)
+    proto = SprinterProtocol(con, None)
+    proto.request(soup)
+    while proto.buffer_status() == "active":
+        proto.execute_requests()
+    
+    assert proto.tool == 1
+    assert proto.temps["b"] == 30.6
+    assert proto.temps["t"][0] == 100.5
+    assert proto.temps["t"][1] == 500.3
+
+
+
+
+def temperature_request_test():
+    """."""
+    lineset = [
+        ['echo:Active Extruder: 1\n', 'ok\n'],
+        ['ok T:200 /5.0 B:40 /5.0\n'],
+        ['echo:Active Extruder: 0\n', 'ok\n'],
+        ['ok T:100 /100.0 B:40 /5.0\n'],
+        ['echo:Active Extruder: 1\n', 'ok\n'],
+        ]
+    con = MockConnection(lineset)
+    proto = SprinterProtocol(con, None)
+
+    # first, change to tool 1, so that all of the state structures are
+    # correct
+    proto.request("T1")
+    while proto.buffer_status() == "active":
+        proto.execute_requests()
+    
+    # request and then grab the interrupt to see what it generates
+    # without executing it
+    proto.request_temps()
+    interrupt = proto.interrupts.pop()
+    soup = interrupt()
+
+    # verify soup returns the expected gcode, so that our lineset
+    # makes sense
+    assert soup == 'M105\nT0\nM105\nT1'
+
+    # request temps again, but let the interrupt fire this time
+    proto.request_temps()
+    while proto.buffer_status() == "active":
+        proto.execute_requests()
+
+    assert proto.tool == 1
+    assert proto.temps["b"] == 40
+    assert proto.temps["t"][0] == 100
+    assert proto.temps["t"][1] == 200

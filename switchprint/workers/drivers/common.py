@@ -59,3 +59,14 @@ class DriverBase:
         """Moves the named axises until they trigger their
         endstops."""
         raise NotImplementedError()
+
+    def set_tool_temp(self, tool, target):
+        """Requests the given tool to be set to the specified
+        temperature."""
+        raise NotImplementedError()
+        
+    def set_bed_temp(self, target):
+        """Requests the print bed be set to the specified
+        temperature."""
+        raise NotImplementedError()
+        

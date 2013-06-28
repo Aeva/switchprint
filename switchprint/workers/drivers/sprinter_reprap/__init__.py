@@ -107,3 +107,17 @@ class Driver(DriverBase):
 
     def motors_off(self):
         self.monitor.request("M84")
+
+
+    def set_tool_temp(self, tool, target):
+        """Requests the given tool to be set to the specified
+        temperature."""
+        #FIXME maybe there should be a monitor command for this so
+        #that it doesn't change the active tool?
+        self.monitor.rquest("T{0}\nM104 S{1}".format(tool, target))
+        
+    def set_bed_temp(self, target):
+        """Requests the print bed be set to the specified
+        temperature."""
+
+        self.monitor.request("M140 S{0}".format(target))

@@ -31,12 +31,20 @@ class PrinterInterface:
         self.__proxy.connect_to_signal(
             "on_state_change",
             self.on_state_change)
+        self.__proxy.connect_to_signal(
+            "on_report",
+            self.on_report)
         self.on_state_change("ready")
 
     def debug(self, command):
         return self.__proxy.debug(command)
 
     def on_state_change(self, state):
+        """Signals when the printer's status changes."""
+        pass
+
+    def on_report(self, blob):
+        """Signals when there is new information availble from a printer."""
         pass
 
     def home(self, x_axis=False, y_axis=False, z_axis=False):
@@ -54,5 +62,8 @@ class PrinterInterface:
     def motors_off(self):
         self.__proxy.motors_off()
 
-    def get_temperature(self):
-        return self.__proxy.get_temperature()
+    def set_tool_temp(self, tool, target):
+        self.__proxy.set_tool_temp(tool, target)
+
+    def set_bed_temp(self, target):
+        self.__proxy.set_bed_temp(target)

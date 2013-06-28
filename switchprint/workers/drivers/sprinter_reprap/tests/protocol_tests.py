@@ -175,7 +175,10 @@ M105 ; temperature request
 
 
 def temperature_request_test():
-    """."""
+    """Tests that the request_temps method generates the correct
+    gcode.  Also tests to see that the recorded state changes are
+    noted correctly."""
+
     lineset = [
         ['echo:Active Extruder: 1\n', 'ok\n'],
         ['ok T:200 /5.0 B:40 /5.0\n'],
@@ -211,3 +214,56 @@ def temperature_request_test():
     assert proto.temps["b"] == 40
     assert proto.temps["t"][0] == 100
     assert proto.temps["t"][1] == 200
+
+
+
+
+def temperature_target_tracking_test():
+    """Test verifies that the protocol is aware of M104 and M140
+    commands being sent, and notes the state request accordingly.
+    """
+
+    lineset = [
+        ['ok\n'], # tool 0 temp set
+        ['echo:Active Extruder: 1\n', 'ok\n'], # change to tool 1
+        ['ok\n'], # tool 1 temp set
+        ['ok\n'], # bed temp set
+
+        ['ok\n'], # tool 1 temp set
+        ['echo:Active Extruder: 0\n', 'ok\n'], # change to tool 1
+        ['ok\n'], # tool 0 temp set
+        ['ok\n'], # bed temp set
+        ]
+
+    con = MockConnection(lineset)
+    proto = SprinterProtocol(con, None)
+    
+    soup = """
+M104 S60  ; set tool 0 to 60 celcius
+T1        ; switch to tool 1
+M104 S100 ; set tool 1 to 100 celcius
+M140 S90  ; set bed to 90 celcius
+"""
+    proto.request(soup)
+    while proto.buffer_status() == "active":
+        proto.execute_requests()
+    
+    assert proto.tool == 1
+    assert proto.targets['t'][0] == 60
+    assert proto.targets['t'][1] == 100
+    assert proto.targets['b'] == 90
+
+    soup = """
+M104 S0 ; set tool 1 to 0 celcius
+T0      ; switch to tool 0
+M104 S0 ; set tool 0 to 0 celcius
+M140 S0 ; set bed to 0 celcius
+"""
+    proto.request(soup)
+    while proto.buffer_status() == "active":
+        proto.execute_requests()
+    
+    assert proto.tool == 0
+    assert proto.targets['t'][0] is None
+    assert proto.targets['t'][1] is None
+    assert proto.targets['b'] is None

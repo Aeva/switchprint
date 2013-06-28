@@ -85,6 +85,11 @@ class SprinterProtocol:
             "b" : 0,
             "t" : [0],
             }
+        self.targets = {
+            "b" : None,
+            "t" : [None],
+            }
+
         self.line = 1
         self.interrupts = []
         self.buffer = []
@@ -190,16 +195,45 @@ class SprinterProtocol:
         before it is sent."""
 
         parts = command.strip().split(" ")
-        cmd = parts[0]
-        params = parts[1:]
+        first = parts.pop(0)
+        num = None
+        cmd = None
+        params = []
+        if first[0] == "N":
+            num = first
+            cmd = parts.pop(0)
+        else:
+            cmd = first
+        params = parts
 
+        # to the best of my knowledge, the printer reports tool
+        # changes, so we don't need to keep track of when we send a
+        # toolchange command.
+
+        # line reset command
         if cmd == "M110":
-            # line reset command
-            self.line = int(params[0][1:])
-        elif cmd.startswith("T"):
-            # tool change command
-            self.tool = int(cmd[1:])
-        
+            self.line = int(params[0][1:]) # parse number from param eg from N333
+
+        # change target temperature
+        if cmd == "M104":
+            while len(self.targets["t"]) < self.tool+1:
+                self.targets["t"].append(None)
+            target = [float(i[1:]) for i in params if i.startswith("S")][0]
+            if target <= 18:
+                # if target temperature is less than approximately 65 fahrenheit,
+                # assume that we're turning the tool off
+                target = None
+            self.targets["t"][self.tool] = target
+            
+        # change target bed temperature
+        if cmd == "M140":
+            target = [float(i[1:]) for i in params if i.startswith("S")][0]
+            if target <= 18:
+                # if target temperature is less than approximately 65 fahrenheit,
+                # assume that we're turning the tool off
+                target = None
+            self.targets['b'] = target
+    
     def __process_response(self, response):
         """Read from the socket and call events where appropriate."""
         

@@ -41,7 +41,7 @@ class SprinterMonitor:
         # 'active', 'hot', 'idle'
         self.monitor_state = 'active'
 
-        self.proto = SprinterProtocol(serial, None)
+        self.proto = SprinterProtocol(serial, self)
 
         self.x = 0
         self.y = 0
@@ -51,6 +51,24 @@ class SprinterMonitor:
         self.tool_temps = [0] * self.info["extruder_count"]
 
         self.__monitor_timeout = None
+
+    def on_state_changed(self):
+        """Called by the wrapped SprinterProtocol when its state has
+        changed.  Currently, this is called when either a tool or the
+        bed's target temperature is set, or when any tool or the bed's
+        temperature is reported."""
+
+        # FIXME: What this ought to do is set some kind of dirty flag,
+        # and then schedule a timeout for triggering a signal which
+        # pushes the agregate state to the host.  The reason for the
+        # delay is twofold, 1) we don't want to stall the execution
+        # stack that called this event longer than necessary, and 2)
+        # this will likely be called several times in succession as
+        # mulitple tools may report their temperatures one after
+        # another.  This allows us to consolidate the reports
+        # slightly.
+
+        pass
 
     def __cue_monitor(self):
         """Schedules a monitor timeout, if one is not already

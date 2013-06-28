@@ -16,7 +16,7 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import time, re
+import time, re, types
 
 
 class SprinterPacket:
@@ -77,6 +77,7 @@ class SprinterProtocol:
     printer in an orderly fashion.  Does state tracking."""
 
     def __init__(self, connection, callbacks):
+        self.__callbacks = callbacks
         self.__serial = connection
         self.info = self.__serial.info
 
@@ -96,6 +97,27 @@ class SprinterProtocol:
         self.pending = None
 
         self.hold_start = None
+
+    def __get_callback(self, name):
+        """Returns named callback function if available, otherwise
+        returns None."""
+
+        found = None
+        if self.__callbacks is not None:
+            try:
+                callback = self.__callbacks.__getattribute__(name)
+                if type(callback) is types.FunctionType:
+                    found = callback
+            except AttributeError:
+                pass
+        return found
+        
+    def on_state_changed(self):
+        """Calls self.__callbacks.on_state_changed, if applicable."""
+        
+        callback = self.__get_callback("on_state_changed")
+        if callback:
+            callback()
 
     def request(self, soup, interrupt=False):
         """Takes a block of text, cleans it, and then adds it to the
@@ -224,6 +246,7 @@ class SprinterProtocol:
                 # assume that we're turning the tool off
                 target = None
             self.targets["t"][self.tool] = target
+            self.on_state_changed()
             
         # change target bed temperature
         if cmd == "M140":
@@ -233,6 +256,7 @@ class SprinterProtocol:
                 # assume that we're turning the tool off
                 target = None
             self.targets['b'] = target
+            self.on_state_changed()
     
     def __process_response(self, response):
         """Read from the socket and call events where appropriate."""
@@ -267,6 +291,7 @@ class SprinterProtocol:
                 if tool_temp:
                     self.temps["t"][self.tool] = \
                         float(tool_temp[0].split(":")[-1])
+                    self.on_state_changed()
 
                 # next check to see if the line contains the bed temp
                 # note that this is usually is on the same line as the
@@ -275,3 +300,4 @@ class SprinterProtocol:
                 if bed_temp and bed_temp[0] != "b:0":
                     self.temps["b"] = \
                         float(bed_temp[0].split(":")[-1])
+                    self.on_state_changed()

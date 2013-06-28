@@ -19,7 +19,7 @@
 import time, re, types
 
 
-class SprinterPacket:
+class SprinterPacket(object):
     """
     Represents a line of gcode being sent to the printer.
     """
@@ -71,7 +71,7 @@ class SprinterPacket:
         return self.status
 
 
-class SprinterProtocol:
+class SprinterProtocol(object):
     """
     Implements a mechanism in which commands may be sent to the
     printer in an orderly fashion.  Does state tracking."""
@@ -106,7 +106,7 @@ class SprinterProtocol:
         if self.__callbacks is not None:
             try:
                 callback = self.__callbacks.__getattribute__(name)
-                if type(callback) is types.FunctionType:
+                if type(callback) in (types.FunctionType, types.MethodType):
                     found = callback
             except AttributeError:
                 pass
@@ -156,7 +156,8 @@ class SprinterProtocol:
                 if tool != hold:
                     soup.append("T%s" % tool)
                 soup.append("M105")
-            soup.append("T%s" % hold)
+            if len(tools) > 1:
+                soup.append("T%s" % hold)
             return "\n".join(soup)
         self.interrupts.append(interrupt)
 

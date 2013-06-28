@@ -16,12 +16,39 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import time, json
 import gobject
 from protocol import SprinterProtocol
 
 
+class Timeout(object):
+    def __init__(self, callback):
+        self.__callback = callback
+        self.__id = None
+        self.dest = None # when the next timeout is estimated to fire
+         
+    def set(self, seconds):
+        """Sets a timeout."""
+        delay = int(1000*seconds)
+        if self.__id is not None:
+            # If there is currently a pending timeout, but the one
+            # we're trying to set would fire sooner, cancel the
+            # original timeout so this one can be set.
+            if time.time() + delay < self.dest:
+                self.clear()
+        if self.__id is None:
+            # If there is no currently set timeout, then schedule one.
+            self.__id = gobject.timeout_add(delay, self.__callback)
+            self.dest = time.time() + delay
 
-class SprinterMonitor:
+    def clear(self):
+        """Clears any pending timeout."""
+        if self.__id is not None:
+            gobject.source_remove(self.__id)
+            self.__id = None
+
+
+class SprinterMonitor(object):
     """Implements a gobject-based threadless eventloop, which hooks
     into SprinterProtocol to facilitate highlevel communication with
     the printer, as well as pushing the printer's state to the
@@ -50,7 +77,11 @@ class SprinterMonitor:
         self.bed_temp = 0
         self.tool_temps = [0] * self.info["extruder_count"]
 
-        self.__monitor_timeout = None
+        self.monitor_timer = Timeout(self.monitor_event_loop)
+        self.report_timer = Timeout(self.report_status)
+
+        self.proto.request_temps()
+        self.__cue_monitor()
 
     def on_state_changed(self):
         """Called by the wrapped SprinterProtocol when its state has
@@ -58,33 +89,33 @@ class SprinterMonitor:
         bed's target temperature is set, or when any tool or the bed's
         temperature is reported."""
 
-        # FIXME: What this ought to do is set some kind of dirty flag,
-        # and then schedule a timeout for triggering a signal which
-        # pushes the agregate state to the host.  The reason for the
-        # delay is twofold, 1) we don't want to stall the execution
-        # stack that called this event longer than necessary, and 2)
-        # this will likely be called several times in succession as
-        # mulitple tools may report their temperatures one after
-        # another.  This allows us to consolidate the reports
-        # slightly.
+        self.report_timer.set(1)
 
-        pass
+    def report_status(self):
+        """Generate a report of the temperature and tool states, and
+        push that info to the host via dbus signal."""
 
+        status = {
+            "thermistors" : {
+                "tools": [],
+                "bed" : (0, None),
+                },
+            "printer_state" : self.printer_state,
+            }
+        
+        status["thermistors"]["bed"] = (
+            self.proto.temps["b"], self.proto.targets["b"])
+        for state in zip(self.proto.temps["t"], 
+                         self.proto.targets["t"]):
+            status["thermistors"]["tools"].append(state)
+        self.__signals.on_report(json.dumps(status))
+        
     def __cue_monitor(self):
         """Schedules a monitor timeout, if one is not already
         scheduled.  The delay is determined by the printer's state."""
         
         seconds = .1 # FIXME determine delay from context
-
-        delay = int(1000*seconds)
-        if self.__monitor_timeout is None:
-            tid = gobject.timeout_add(delay, self.monitor_event_loop)
-            self.__monitor_timeout = tid
-
-    def __clear_monitor(self):
-        """Clears the monitor timeout."""
-        gobject.source_remove(self.__monitor_timeout)
-        self.__monitor_timeout = None
+        self.monitor_timer.set(seconds)
 
     def __change_monitor_state(self, new_state):
         """Changes the state of the monitor, and possibly initiates a
@@ -118,7 +149,7 @@ class SprinterMonitor:
     def monitor_event_loop(self):
         """Called periodically depending on the monitor status."""
 
-        self.__clear_monitor()
+        self.monitor_timer.clear()
         self.proto.execute_requests()
         #if proto.buffer_status() == "active":
         #    pass

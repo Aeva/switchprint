@@ -71,7 +71,7 @@ class SprinterMonitor(object):
 
         # 'idle', 'job_done', 'printing', 'paused, 'error'
         self.printer_state = 'idle'
-        # 'active', 'hot', 'idle'
+        # 'active', 'hot', 'cool', 'idle'
         self.monitor_state = 'active'
 
         self.monitor_timer = Timeout(self.monitor_event_loop)
@@ -85,7 +85,7 @@ class SprinterMonitor(object):
     def get_max_temp_state(self):
         """The max temp returned is the highest of the set of all
         temperature states and temperature targets. If this number is
-        less than or equal to 18, then "max_temp" will be set to None,
+        less than or equal to 30, then "max_temp" will be set to None,
         indicating that the system is in fully cooled state and may be
         ignored.
         """
@@ -96,7 +96,16 @@ class SprinterMonitor(object):
         union = readings + targets
         union.sort()
         max_temp = union.pop()
-        return max_temp if max_temp > 18 else None
+        
+        # FIXME rather than an arbitrary definition of room
+        # temperature or whatever '30' is supposed to represent, None
+        # should be returned only after the change in temperature over
+        # the last three minutes was less than a degree or something
+        # like that AND its low enough that it won't likely start your
+        # house on fire or cause burns to anyone who touches the hot
+        # bits.
+
+        return max_temp if max_temp > 30 else None
 
     def on_state_changed(self):
         """Called by the wrapped SprinterProtocol when its state has
@@ -129,13 +138,13 @@ class SprinterMonitor(object):
         """Changes the state of the monitor, and possibly initiates a
         timeout."""
 
-        assert new_state in ['active', 'hot', 'idle']
+        assert new_state in ['active', 'hot', 'cool', 'idle']
         if new_state != self.monitor_state:
             print "Monitor state is now", new_state
             old_state = self.monitor_state
             self.monitor_state = new_state
-            if new_state in ['active', 'hot']:
-                self.temp_timer.set(.1)
+            if new_state in ['active', 'hot', 'cool']:
+                self.temp_timer.set(1)
                 
     def request(self, soup):
         """Takes a block of text, cleans it, and then adds it into the
@@ -167,6 +176,8 @@ class SprinterMonitor(object):
                 delay = 2
         elif self.monitor_state == "hot":
             delay = 2
+        elif self.monitor_state == "cool":
+            delay = 5
         if delay is not None:
             self.temp_timer.set(delay)
         
@@ -177,6 +188,8 @@ class SprinterMonitor(object):
         seconds = .5
         if self.monitor_state == "active":
             seconds = .1
+        elif self.monitor_state == "cool":
+            seconds = 5
         self.monitor_timer.set(seconds)
         
     def monitor_event_loop(self):
@@ -196,6 +209,8 @@ class SprinterMonitor(object):
                 if not max_temp:
                     self.__change_monitor_state("idle")
                 else:
+                    if max_temp < 50:
+                        self.__change_monitor_state("cool")
                     self.__cue_monitor()
             
             

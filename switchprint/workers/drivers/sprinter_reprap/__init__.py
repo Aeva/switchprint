@@ -70,6 +70,8 @@ class Driver(DriverBase):
         disconnect from whatever device it thinks it is connected to,
         and attach to whatever ostensibly new device is described."""
 
+        if self.serial:
+            self.serial.close()
         self.serial = SerialConnection(port, baud)
         self.info = json.dumps(self.serial.info)
         self.connect_events(self.__signals)

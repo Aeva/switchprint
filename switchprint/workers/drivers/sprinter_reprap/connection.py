@@ -58,6 +58,10 @@ class SerialConnection:
             error = textwrap.fill(error)
             raise ConnectionException(error)
 
+    def close(self):
+        """Close the serial port."""
+        self.__s.close()
+
     def connection_info(self):
         """Returns False if the connection was not established,
         otherwise returns (port, baud)."""
@@ -109,10 +113,15 @@ class SerialConnection:
 
     def __setup_port(self, port, baud):
         """Connect to the serial port and divine some information."""
-        self.__reset()
         self.__s = serial.Serial(port, baud, timeout=0.25)
-        time.sleep(1)
-        post = "\n".join(self.__s.readlines()).strip()
+        self.__reset()
+        giveup = 20 # poll the device for about five seconds before giving in
+        post = ""
+        while post == "" and giveup > 0:
+            # wait for the device to boot
+            time.sleep(.25)
+            post = "\n".join(self.__s.readlines()).strip()
+            giveup -= 1
         for trigger in ("sprinter", "marlin"):
             if post.lower().count(trigger):
                 self.__port = port
@@ -121,6 +130,8 @@ class SerialConnection:
                 soup = self.__querie("M115")[0]
                 self.info = self.parse_capabilities(soup)
                 return True
+            #elif trigger=="marlin":
+            #    import pdb; pdb.set_trace()
         return False
 
     def __querie(self, command):

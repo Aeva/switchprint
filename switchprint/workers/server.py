@@ -138,6 +138,7 @@ def start_server_loop(device_path, printer_uuid, driver):
     main_loop = gobject.MainLoop()
     DBusGMainLoop(set_as_default=True)
 
+    bus = common.get_bus()
     printers = list_printers()
     check_name = name_from_uuid(printer_uuid)
     if printers.count(check_name):
@@ -149,7 +150,7 @@ def start_server_loop(device_path, printer_uuid, driver):
         server = PrintServer(device_path, printer_uuid, driver)
 
         # notify the main process that a new printer exists
-        switchboard = common.get_bus().get_object(
+        switchboard = bus.get_object(
             "org.voxelpress.hardware", "/org/voxelpress/hardware")
         switchboard.worker_new_printer(str(printer_uuid))
         main_loop.run()

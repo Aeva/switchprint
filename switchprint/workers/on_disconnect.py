@@ -28,7 +28,7 @@ def on_disconnect(handler, *event_args):
 
     bus = common.get_bus()
 
-    for name in list_printers(bus):
+    for name in list_printers():
         path = "/org/voxelpress/hardware/"+name.split(".")[-1]    
         prox = bus.get_object(name, path)
         if prox.verify_disconnect(event_args[0]):

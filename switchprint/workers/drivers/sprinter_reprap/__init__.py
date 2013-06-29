@@ -114,7 +114,7 @@ class Driver(DriverBase):
         temperature."""
         #FIXME maybe there should be a monitor command for this so
         #that it doesn't change the active tool?
-        self.monitor.rquest("T{0}\nM104 S{1}".format(tool, target))
+        self.monitor.request("T{0}\nM104 S{1}".format(tool, target))
         
     def set_bed_temp(self, target):
         """Requests the print bed be set to the specified

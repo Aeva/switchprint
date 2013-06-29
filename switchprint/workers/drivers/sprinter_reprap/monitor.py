@@ -26,6 +26,11 @@ class Timeout(object):
         self.__callback = callback
         self.__id = None
         self.dest = None # when the next timeout is estimated to fire
+        
+    def __trigger(self):
+        """Wrapps the callback."""
+        self.clear()
+        self.__callback()
          
     def set(self, seconds):
         """Sets a timeout."""
@@ -38,7 +43,7 @@ class Timeout(object):
                 self.clear()
         if self.__id is None:
             # If there is no currently set timeout, then schedule one.
-            self.__id = gobject.timeout_add(delay, self.__callback)
+            self.__id = gobject.timeout_add(delay, self.__trigger)
             self.dest = time.time() + delay
 
     def clear(self):
@@ -62,26 +67,36 @@ class SprinterMonitor(object):
         self.__serial = serial
         self.__signals = server
         self.info = serial.info
+        self.proto = SprinterProtocol(serial, self)
 
         # 'idle', 'job_done', 'printing', 'paused, 'error'
         self.printer_state = 'idle'
         # 'active', 'hot', 'idle'
         self.monitor_state = 'active'
 
-        self.proto = SprinterProtocol(serial, self)
-
-        self.x = 0
-        self.y = 0
-        self.z = 0
-
-        self.bed_temp = 0
-        self.tool_temps = [0] * self.info["extruder_count"]
-
         self.monitor_timer = Timeout(self.monitor_event_loop)
         self.report_timer = Timeout(self.report_status)
+        self.temp_timer = Timeout(self.query_temp)
 
         self.proto.request_temps()
         self.__cue_monitor()
+        self.query_temp()
+
+    def get_max_temp_state(self):
+        """The max temp returned is the highest of the set of all
+        temperature states and temperature targets. If this number is
+        less than or equal to 18, then "max_temp" will be set to None,
+        indicating that the system is in fully cooled state and may be
+        ignored.
+        """
+        
+        readings = [self.proto.temps["b"]] + self.proto.temps["t"]
+        targets = [self.proto.targets["b"]] + self.proto.targets["t"]
+        targets = [i for i in targets if i is not None]
+        union = readings + targets
+        union.sort()
+        max_temp = union.pop()
+        return max_temp if max_temp > 18 else None
 
     def on_state_changed(self):
         """Called by the wrapped SprinterProtocol when its state has
@@ -109,13 +124,6 @@ class SprinterMonitor(object):
                          self.proto.targets["t"]):
             status["thermistors"]["tools"].append(state)
         self.__signals.on_report(json.dumps(status))
-        
-    def __cue_monitor(self):
-        """Schedules a monitor timeout, if one is not already
-        scheduled.  The delay is determined by the printer's state."""
-        
-        seconds = .1 # FIXME determine delay from context
-        self.monitor_timer.set(seconds)
 
     def __change_monitor_state(self, new_state):
         """Changes the state of the monitor, and possibly initiates a
@@ -123,11 +131,11 @@ class SprinterMonitor(object):
 
         assert new_state in ['active', 'hot', 'idle']
         if new_state != self.monitor_state:
+            print "Monitor state is now", new_state
             old_state = self.monitor_state
             self.monitor_state = new_state
-
-        if new_state in ['active', 'hot']:
-            self.__cue_monitor()
+            if new_state in ['active', 'hot']:
+                self.temp_timer.set(.1)
                 
     def request(self, soup):
         """Takes a block of text, cleans it, and then adds it into the
@@ -141,16 +149,53 @@ class SprinterMonitor(object):
             self.proto.request(soup, interrupt=True)
 
         self.__change_monitor_state("active")
+        self.__cue_monitor()
         
     def print_file(self, fileob):
         """Streams gcode from a file object to the printer."""
         raise NotImplementedError()
 
+    def query_temp(self):
+        """Periodically is called to query for temperature changes."""
+        
+        self.proto.request_temps()
+        delay = None
+        if self.monitor_state == "active":
+            if self.printer_state == "printing":
+                delay = 5
+            else:
+                delay = 2
+        elif self.monitor_state == "hot":
+            delay = 2
+        if delay is not None:
+            self.temp_timer.set(delay)
+        
+    def __cue_monitor(self):
+        """Schedules a monitor timeout, if one is not already
+        scheduled.  The delay is determined by the printer's state."""
+        
+        seconds = .5
+        if self.monitor_state == "active":
+            seconds = .1
+        self.monitor_timer.set(seconds)
+        
     def monitor_event_loop(self):
         """Called periodically depending on the monitor status."""
 
-        self.monitor_timer.clear()
         self.proto.execute_requests()
-        #if proto.buffer_status() == "active":
-        #    pass
-        self.__cue_monitor()
+        
+        if self.proto.buffer_status() == "active":
+            self.__change_monitor_state("active")
+            self.__cue_monitor()
+        else:
+            if self.monitor_state == "active":
+                self.__change_monitor_state("hot")
+                self.__cue_monitor()
+            else:
+                max_temp = self.get_max_temp_state()
+                if not max_temp:
+                    self.__change_monitor_state("idle")
+                else:
+                    self.__cue_monitor()
+            
+            

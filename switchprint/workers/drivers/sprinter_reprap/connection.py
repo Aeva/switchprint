@@ -97,7 +97,10 @@ class SerialConnection:
 
         keys = map(clean, re.findall("[A-Z_]+:", soup))
         values = map(clean, re.split("[A-Z_]+:", soup)[1:])
-        return dict(zip(keys, values))
+        infodict = dict(zip(keys, values))
+        if not infodict.has_key("extruder_count"):
+            infodict["extruder_count"] = 1
+        return infodict
 
     def __auto_detect(self, port, bauds):
         """Try to detect the appropriate baud rate for the printer."""

@@ -19,6 +19,7 @@
 import sys, os, time
 import textwrap
 import serial
+from switchprint.workers.drivers.capabilities import FFFInfo
 from gcode_common import parse_capabilities, parse_bed_temp
 
 
@@ -35,7 +36,8 @@ class SerialConnection:
         self.__port = None
         self.__baud = None
         self.post = ""
-        self.info = {}
+        self.reported = {}
+        self.info = FFFInfo()
 
         bauds = (250000, 115200, 57600, 38400, 19200, 9600, 2400)
         assert baud in bauds or baud is None
@@ -54,6 +56,15 @@ class SerialConnection:
                 error = """
                 Initialization Error: SprinterProtocol's autodetection
                 capabilities failed to initialize the printer."""
+            else:
+                try:
+                    self.info.tools = int(self.reported["extruder_count"])
+                except KeyError:
+                    pass
+                try:
+                    self.info.heated_bed = self.reported["heated_bed"]
+                except KeyError:
+                    pass
         if error:
             error = textwrap.dedent(error).strip()
             error = textwrap.fill(error)
@@ -107,9 +118,9 @@ class SerialConnection:
                 self.__baud = baud
                 self.post = post
                 soup = self.__querie("M115")[0]
-                self.info = parse_capabilities(soup)
-                temp = self.__querie("M105")[0]
-                import pdb; pdb.set_trace()
+                self.reported = parse_capabilities(soup)
+                temp = parse_bed_temp(self.__querie("M105")[0])
+                self.reported["heated_bed"] = temp is not None
                 return True
             #elif trigger=="marlin":
             #    import pdb; pdb.set_trace()

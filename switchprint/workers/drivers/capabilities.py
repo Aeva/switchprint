@@ -16,7 +16,7 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-class PrinterClassInfo(object):
+class PrinterInfo(object):
     """PrinterClassInfo is to be subclassed for different types of
     printers.  These classes are used by the driver to report the
     divined information about the printers they control.  These
@@ -29,22 +29,22 @@ class PrinterClassInfo(object):
         self.volume = [0, 0, 0]
 
 
-class FFFInfo(PrinterType):
+class FFFInfo(PrinterInfo):
     """This PrinteClassInfo subclass describes common capabilities to
     FFF printers."""
 
     def __init__(self):
-        PrinterClassInfo(self)
+        PrinterInfo.__init__(self)
         self.printer_type = "FFF 3D Printer"
         self.tools = 1
         self.heated_bed = False
 
 
-class SLAInfo(PrinterType):
+class SLAInfo(PrinterInfo):
     def __init__(self):
         raise NotImplementedError()
 
 
-class DLPInfo(PrinterType):
+class DLPInfo(PrinterInfo):
     def __init__(self):
         raise NotImplementedError()

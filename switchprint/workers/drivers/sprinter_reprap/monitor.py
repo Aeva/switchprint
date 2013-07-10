@@ -66,7 +66,6 @@ class SprinterMonitor(object):
     def __init__(self, serial, server):
         self.__serial = serial
         self.__signals = server
-        self.info = serial.info
         self.proto = SprinterProtocol(serial, self)
 
         # 'idle', 'job_done', 'printing', 'paused, 'error'

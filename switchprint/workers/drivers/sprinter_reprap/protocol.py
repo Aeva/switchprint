@@ -80,7 +80,6 @@ class SprinterProtocol(object):
     def __init__(self, connection, callbacks):
         self.__callbacks = callbacks
         self.__serial = connection
-        self.info = self.__serial.info
 
         self.tool = 0
         self.temps = {
@@ -150,7 +149,7 @@ class SprinterProtocol(object):
 
         def interrupt():
             hold = self.tool
-            count = int(self.info["extruder_count"])
+            count = self.__serial.info.tools
             tools = [(i+self.tool) % count for i in range(count)]
             soup = []
             for tool in tools:

@@ -16,7 +16,7 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import json, time
+import json, pickle, time
 from switchprint.workers.drivers.driver_base import DriverBase
 from connection import SerialConnection, ConnectionException
 from monitor import SprinterMonitor
@@ -55,7 +55,7 @@ class Driver(DriverBase):
 
         try:
             self.serial = SerialConnection(port)
-            self.info = json.dumps(self.serial.info)
+            self.info = pickle.dumps(self.serial.info) ### HACK
             return True
         except ConnectionException:
             return False
@@ -78,7 +78,7 @@ class Driver(DriverBase):
         if self.serial:
             self.serial.close()
         self.serial = SerialConnection(port, baud)
-        self.info = json.dumps(self.serial.info)
+        self.info = pickle.dumps(self.serial.info) ### hack
         self.connect_events(self.__signals)
 
     #### printer control functions ###

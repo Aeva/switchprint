@@ -19,6 +19,7 @@
 import re
 import time
 from threading import Thread
+from switchprint.workers.drivers.capabilities import FFFInfo
 from ..protocol import SprinterPacket, SprinterProtocol
 
 
@@ -32,9 +33,8 @@ class MockConnection():
     """
 
     def __init__(self, lineset=None):
-        self.info = {
-            "extruder_count" : 2,
-            }
+        self.info = FFFInfo()
+        self.info.tools = 2
         self.hits = 0
         self.lineset = lineset
         self.buffer = []

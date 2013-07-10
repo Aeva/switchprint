@@ -107,7 +107,7 @@ class SerialConnection:
                 self.__baud = baud
                 self.post = post
                 soup = self.__querie("M115")[0]
-                self.info = self.parse_capabilities(soup)
+                self.info = parse_capabilities(soup)
                 temp = self.__querie("M105")[0]
                 import pdb; pdb.set_trace()
                 return True

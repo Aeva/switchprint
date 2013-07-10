@@ -16,9 +16,10 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys, os, time, re
+import sys, os, time
 import textwrap
 import serial
+from gcode_common import parse_capabilities, parse_bed_temp
 
 
 class ConnectionException(Exception):
@@ -77,31 +78,6 @@ class SerialConnection:
     def readlines(self):
         return self.__s.readlines()
 
-    def parse_capabilities(self, soup):
-        """Called by autodetect to parse the soup returned by the M115
-        command, to divine meaningful information from the printer as
-        reported by the firmware. """
-
-        def clean(text):
-            text = text.strip().lower()
-            if text.endswith(":"):
-                text = text[:-1]
-            try:
-                val = int(text)
-            except ValueError:
-                try:
-                    val = float(text)
-                except ValueError:
-                    val = text
-            return val
-
-        keys = map(clean, re.findall("[A-Z_]+:", soup))
-        values = map(clean, re.split("[A-Z_]+:", soup)[1:])
-        infodict = dict(zip(keys, values))
-        if not infodict.has_key("extruder_count"):
-            infodict["extruder_count"] = 1
-        return infodict
-
     def __auto_detect(self, port, bauds):
         """Try to detect the appropriate baud rate for the printer."""
         for baud in bauds:
@@ -132,6 +108,8 @@ class SerialConnection:
                 self.post = post
                 soup = self.__querie("M115")[0]
                 self.info = self.parse_capabilities(soup)
+                temp = self.__querie("M105")[0]
+                import pdb; pdb.set_trace()
                 return True
             #elif trigger=="marlin":
             #    import pdb; pdb.set_trace()

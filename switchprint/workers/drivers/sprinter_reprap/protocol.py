@@ -16,7 +16,8 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import time, re, types
+import time, types
+from gcode_common import parse_bed_temp, parse_tool_temp
 
 
 class SprinterPacket(object):
@@ -288,17 +289,15 @@ class SprinterProtocol(object):
                 # check for a state report
 
                 # first check to see if the line contains the tool temp
-                tool_temp = re.findall(r"t:[0-9.]+", simple)
+                tool_temp = parse_tool_temp(simple)
                 if tool_temp:
-                    self.temps["t"][self.tool] = \
-                        float(tool_temp[0].split(":")[-1])
+                    self.temps["t"][self.tool] = tool_temp
                     self.on_state_changed()
 
                 # next check to see if the line contains the bed temp
                 # note that this is usually is on the same line as the
                 # tool temp
-                bed_temp = re.findall(r"b:[0-9.]+", simple)
-                if bed_temp and bed_temp[0] != "b:0":
-                    self.temps["b"] = \
-                        float(bed_temp[0].split(":")[-1])
+                bed_temp = parse_bed_temp(simple)
+                if bed_temp:
+                    self.temps["b"] = bed_temp
                     self.on_state_changed()

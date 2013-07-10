@@ -25,7 +25,8 @@ class PrinterClassInfo(object):
     FFFInfo."""
 
     def __init__(self):
-        self.volume = (0, 0, 0)
+        self.printer_type = "Generic 3D Printer"
+        self.volume = [0, 0, 0]
 
 
 class FFFInfo(PrinterType):
@@ -34,6 +35,7 @@ class FFFInfo(PrinterType):
 
     def __init__(self):
         PrinterClassInfo(self)
+        self.printer_type = "FFF 3D Printer"
         self.tools = 1
         self.heated_bed = False
 

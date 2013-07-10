@@ -36,6 +36,11 @@ class Driver(DriverBase):
         self.monitor = None
         self.__signals = None
 
+    def get_class_info(self):
+        """Returns a PrinterClassInfo object, as defined in
+        capabilities.py"""
+        pass
+
     def connect_events(self, server):
         """Called when the driver is attached to a print server, so
         that the driver may call signals on the server object."""

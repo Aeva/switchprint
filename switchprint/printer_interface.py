@@ -17,6 +17,7 @@
 
 
 import uuid
+import pickle
 from .common import *
 
 
@@ -38,6 +39,10 @@ class PrinterInterface:
 
     def debug(self, command):
         return self.__proxy.debug(command)
+
+    def get_class_info(self):
+        """Returns the printer's class info object."""
+        return pickle.loads(self.__proxy.get_class_info())
 
     def on_state_change(self, state):
         """Signals when the printer's status changes."""

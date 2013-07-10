@@ -16,7 +16,7 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import json
+import json, pickle
 import gobject
 import dbus, dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
@@ -128,9 +128,11 @@ class PrintServer(dbus.service.Object):
     @dbus.service.method('org.voxelpress.hardware', in_signature='d')
     def set_bed_temp(self, target):
         self.__driver.set_bed_temp(target)
-    
-    
 
+    @dbus.service.method('org.voxelpress.hardware', out_signature='s')
+    def get_class_info(self):
+        return pickle.dumps(self.__driver.get_class_info())
+    
 
 def start_server_loop(device_path, printer_uuid, driver):
 

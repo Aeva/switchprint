@@ -39,7 +39,8 @@ class Driver(DriverBase):
     def get_class_info(self):
         """Returns a PrinterClassInfo object, as defined in
         capabilities.py"""
-        pass
+
+        return self.serial.info
 
     def connect_events(self, server):
         """Called when the driver is attached to a print server, so

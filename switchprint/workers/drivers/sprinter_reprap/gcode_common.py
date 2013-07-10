@@ -16,6 +16,9 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import re
+
+
 def __parse_temp(soup, key):
     """Parses a temperature param from the soup returned by M105."""
 

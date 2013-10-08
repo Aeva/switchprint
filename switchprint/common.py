@@ -16,7 +16,8 @@
 # along with Switchprint.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os, sys
+import os, sys, re
+from subprocess import check_output
 import dbus
 
 
@@ -62,18 +63,23 @@ def bootstrap():
         barf("The switchprint daemon is already running.")
     
     if sys.platform == "linux2":
+        dialout_group = check_output(("getent", "group", "dialout"))
+        dialout_group = int(re.findall(r'\d+', dialout_group)[0])
+
         if os.getuid() == 0:
             __ENV["bus"] = dbus.SystemBus()
             __ENV["config"] = "/etc/voxelpress"
-        elif not os.getgroups().count(20):
-            # group 20 is 'dialout', which is required to access serial devices
+        elif not os.getgroups().count(dialout_group):
+            # required to access serial devices
             barf("""
 When running switchprint as a non-root user, it is neccessary that the
 user be in the 'dialout' group.  To add this user to the dialout, run
 the following command:
 
 $ sudo usermod -a -G dialout {0}
-""".format(os.getlogin()))
+
+After running this command, you will need to log out and log back in
+again for the change to take effect. """.format(os.getlogin()))
             
     if not __ENV["bus"]:
         __ENV["bus"] = dbus.SessionBus()

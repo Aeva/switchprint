@@ -89,6 +89,7 @@ class SprinterMonitor(object):
         self.cache_file = None
         self.job_length = 0
         self.job_counter = 0
+        self.job_dry = False
 
     def get_max_temp_state(self):
         """The max temp returned is the highest of the set of all
@@ -188,9 +189,38 @@ class SprinterMonitor(object):
                 self.cache_file.write(gcode + "\n")
         self.cache_file.close()
         self.cache_file = open(self.cache_path, "r")
+        self.job_dry = False
 
     def print_step(self):
-        pass
+        if not self.job_dry and len(self.proto.buffer) < 50:
+            print "PRINT STEP", self.job_counter, self.job_length
+
+            percent = str(min(100.0/self.job_length*self.job_counter, 100.0))
+            self.__signals.on_pdq_print_progress(percent)
+
+            chunk = []
+            for i in range(100):
+                line = self.cache_file.readline()
+                if line != '':
+                    chunk.append(line.strip())
+                else:
+                    break
+
+            if len(chunk) == 0:
+                # the job's almost done, I guess
+                self.job_dry = True
+            else:
+                self.job_counter += len(chunk)
+                self.proto.request("\n".join(chunk))
+
+        if self.job_dry and self.proto.buffer_status() == "idle":
+            self.print_finish()
+            
+    def print_finish(self):
+        self.job_counter = self.job_length
+        self.__signals.on_pdq_print_complete()
+        self.printer_state = 'idle'
+        self.cache_file.close()
 
     def query_temp(self):
         """Periodically is called to query for temperature changes."""
@@ -228,27 +258,10 @@ class SprinterMonitor(object):
         if self.printer_state == "printing":
             if not self.cache_file:
                 self.print_prep()
-
-            percent = str(min(self.job_length-self.job_counter, 1)*100.0)
-            self.__signal.on_pdq_print_progress(percent)
-
-            chunk = []
-            for i in range(50):
-                line = self.cache_file.readline()
-                if line != '':
-                    chunk.append(line.strip())
-                else:
-                    break
-            if len(chunk) == 0:
-                # the job's done, I guess
-                self.job_counter = self.job_length
-                self.__signal.on_pdq_print_complete()
-                self.printer_state = 'idle'
-            else:
-                self.job_counter += len(chunk)
-                self.proto.request("\n".join(chunk))
+            self.print_step()
+            self.__cue_monitor()
         
-        if self.proto.buffer_status() == "active":
+        elif self.proto.buffer_status() == "active":
             self.__change_monitor_state("active")
             self.__cue_monitor()
         else:

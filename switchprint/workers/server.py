@@ -149,7 +149,7 @@ class PrintServer(dbus.service.Object):
         pass
 
     @dbus.service.signal(dbus_interface='org.voxelpress.hardware')
-    def on_pdq_print_complete(self, state):
+    def on_pdq_print_complete(self):
         """Signals that the print job completed."""
         pass
 

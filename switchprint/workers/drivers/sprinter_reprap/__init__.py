@@ -129,3 +129,6 @@ class Driver(DriverBase):
         temperature."""
 
         self.monitor.request("M140 S{0}".format(target))
+
+    def pdq_request_print(self, path):
+        self.monitor.print_file(path)

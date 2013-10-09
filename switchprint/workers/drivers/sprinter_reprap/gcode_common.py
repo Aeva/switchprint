@@ -19,6 +19,18 @@
 import re
 
 
+def clean(soup):
+    """Parses out valid gcode from a block of text.  Returns the
+    result in a list of strings"""
+
+    commands = []
+    for raw in soup.split("\n"):
+        line = raw.split(";")[0].strip().upper()
+        if line:
+            commands.append(line)
+    return commands
+
+
 def __parse_temp(soup, key):
     """Parses a temperature param from the soup returned by M105."""
 

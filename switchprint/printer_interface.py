@@ -36,6 +36,12 @@ class PrinterInterface:
             "on_report",
             self.on_report)
         self.on_state_change("ready")
+        self.__proxy.connect_to_signal(
+            "on_pdq_print_progress",
+            self.on_pdq_print_progress)
+        self.__proxy.connect_to_signal(
+            "on_pdq_print_complete",
+            self.on_pdq_print_complete)
 
     def debug(self, command):
         return self.__proxy.debug(command)
@@ -72,3 +78,17 @@ class PrinterInterface:
 
     def set_bed_temp(self, target):
         self.__proxy.set_bed_temp(target)
+
+    #### FIXME: The following "pdq" method and signals were added to
+    #### facilitate a demonstration and enable rudementry printing
+    #### functionality.  They exist for demonstration, and should not
+    #### be used for day to day printing.
+
+    def pdq_request_print(self, path):
+        self.__proxy.pdq_request_print(path)
+
+    def on_pdq_print_progress(self, progress):
+        pass
+
+    def on_pdq_print_complete(self):
+        pass

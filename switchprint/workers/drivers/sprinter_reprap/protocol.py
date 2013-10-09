@@ -17,7 +17,7 @@
 
 
 import time, types
-from gcode_common import parse_bed_temp, parse_tool_temp
+from gcode_common import parse_bed_temp, parse_tool_temp, clean
 
 
 class SprinterPacket(object):
@@ -129,7 +129,7 @@ class SprinterProtocol(object):
                 return soup
             self.interrupts.append(closure)
         else:
-            self.buffer += self.__clean(soup)
+            self.buffer += clean(soup)
 
     def buffer_status(self):
         """Returns either 'idle', if both buffers are empty and there
@@ -179,7 +179,7 @@ class SprinterProtocol(object):
         # next, dump all pending interrupts in front of the buffer:
         while self.interrupts:
             soup = self.interrupts.pop(0)()
-            self.buffer = self.__clean(soup) + self.buffer
+            self.buffer = clean(soup) + self.buffer
 
         state = 'ok'
         hold_time = 0
@@ -201,17 +201,6 @@ class SprinterProtocol(object):
                 self.line += 1
                 hold_time = time.time() - self.hold_start
                 print hold_time
-
-    def __clean(self, soup):
-        """Parses out valid gcode from a block of text.  Returns the
-        result in a list of strings"""
-
-        commands = []
-        for raw in soup.split("\n"):
-            line = raw.split(";")[0].strip().upper()
-            if line:
-                commands.append(line)
-        return commands
             
     def __update_states(self, command):
         """Updates internal states when applicable to a command,

@@ -75,3 +75,8 @@ class DriverBase:
         temperature."""
         raise NotImplementedError()
         
+    def pdq_request_print(self, file_path):
+        """Request to start a printer job.  This method is being added
+        for demonstrational purposes, and does not implement features
+        like queueing or validation.  USE AT OWN RISK"""
+        raise NotImplementedError()

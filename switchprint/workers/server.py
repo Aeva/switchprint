@@ -132,6 +132,28 @@ class PrintServer(dbus.service.Object):
     @dbus.service.method('org.voxelpress.hardware', out_signature='s')
     def get_class_info(self):
         return pickle.dumps(self.__driver.get_class_info())
+
+
+    #### FIXME: The following "pdq" method and signals were added to
+    #### facilitate a demonstration and enable rudementry printing
+    #### functionality.  They exist for demonstration, and should not
+    #### be used for day to day printing.
+
+    @dbus.service.method('org.voxelpress.hardware', in_signature='s')
+    def pdq_request_print(self, file_path):
+        self.__driver.pdq_request_print(file_path)
+
+    @dbus.service.signal(dbus_interface='org.voxelpress.hardware', signature='s')
+    def on_pdq_print_progress(self, state):
+        """Signals the current status of the print job."""
+        pass
+
+    @dbus.service.signal(dbus_interface='org.voxelpress.hardware')
+    def on_pdq_print_complete(self, state):
+        """Signals that the print job completed."""
+        pass
+
+
     
 
 def start_server_loop(device_path, printer_uuid, driver):

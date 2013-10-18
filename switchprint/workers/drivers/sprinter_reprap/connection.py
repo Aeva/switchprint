@@ -89,6 +89,9 @@ class SerialConnection:
     def readlines(self):
         return self.__s.readlines()
 
+    def inWaiting(self):
+        return self.__s.inWaiting()
+
     def __auto_detect(self, port, bauds):
         """Try to detect the appropriate baud rate for the printer."""
         for baud in bauds:

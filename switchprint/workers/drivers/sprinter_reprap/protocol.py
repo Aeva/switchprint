@@ -62,6 +62,10 @@ class StreamCache(object):
             self.send_buffer.append(self.__wrap(line_buffer.pop(0)))
         return take
 
+    def get_appetite(self):
+        """Returns the number of statements pending to be sent."""
+        return len(self.pending)
+
     def get_idle(self):
         """Returns true if the Cache is totally empty with no pending
         commands, and with the send buffer clear.  Otherwise, return
@@ -166,6 +170,10 @@ class SprinterProtocol(object):
         self.cache.feed(soup, interrupt)
         if cache_idle:
             self.__advance(cache_idle)
+
+    def get_appetite(self):
+        """Returns the number of statements pending to be sent."""
+        return self.cache.get_appetite()
 
     def buffer_status(self):
         """Returns either 'idle', if both buffers are empty and there

@@ -192,7 +192,7 @@ class SprinterMonitor(object):
         self.job_dry = False
 
     def print_step(self):
-        if not self.job_dry and len(self.proto.buffer) < 50:
+        if not self.job_dry and len(self.proto.get_appetite()) < 50:
             print "PRINT STEP", self.job_counter, self.job_length
 
             percent = str(min(100.0/self.job_length*self.job_counter, 100.0))

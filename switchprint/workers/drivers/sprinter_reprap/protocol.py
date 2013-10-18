@@ -211,7 +211,7 @@ class SprinterProtocol(object):
                     cut = None
                     break
             # also call process results for state-related events
-            map(self.__process_response, results)
+            self.__process_response(results)
 
         if ready or force:
             next_block = self.cache.nudge(request, cut)
@@ -283,15 +283,11 @@ class SprinterProtocol(object):
     
     def __process_response(self, response):
         """Read from the socket and call events where appropriate."""
-        
+
         for line in response:
             simple = line.lower().strip()
 
-            if simple.startswith("resend:"):
-                line_num = int(line.split(":")[-1].strip())
-                self.__resend(line_num)
-
-            elif simple.startswith("echo:"):
+            if simple.startswith("echo:"):
                 if simple.count("active extruder:"):
                     # check to see if we changed tools
                     self.tool = int(simple.split(":")[-1].strip())

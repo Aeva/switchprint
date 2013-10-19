@@ -106,7 +106,7 @@ class SerialConnection:
 
     def __setup_port(self, port, baud):
         """Connect to the serial port and divine some information."""
-        self.__s = serial.Serial(port, baud)
+        self.__s = serial.Serial(port, baud, timeout=0)
         self.__reset()
         giveup = 20 # poll the device for about five seconds before giving in
         post = ""

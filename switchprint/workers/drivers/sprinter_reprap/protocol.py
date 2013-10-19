@@ -96,6 +96,11 @@ class StreamCache(object):
             if req_num > end_num:
                 self.send_buffer = []
             elif req_num < first_num:
+                print "FATAL ERROR"
+                print "Requested line number:", req_num
+                print "Current cache contents:"
+                for i in self.send_buffer:
+                    print " -", i
                 raise RuntimeError(
                     "Line requested that is no longer in the queue!!")
             else:

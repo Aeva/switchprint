@@ -70,8 +70,8 @@ class PrintServer(dbus.service.Object):
         state.  Error messages should be reported through a different
         signal.
         """
-
-        print "Pushing blob to applicable hosts:\n",blob
+        ## DEBUG
+        # print "Pushing blob to applicable hosts:\n",blob
 
     @dbus.service.signal(dbus_interface='org.voxelpress.hardware', signature='s')
     def on_state_change(self, state):

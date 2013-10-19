@@ -195,7 +195,7 @@ class SprinterMonitor(object):
         if not self.job_dry and self.proto.get_appetite() < 50:
             print "PRINT STEP", self.job_counter, self.job_length
 
-            percent = str(min(100.0/self.job_length*self.job_counter, 100.0))
+            percent = str(min((100.0/self.job_length)*self.job_counter, 100.0))
             self.__signals.on_pdq_print_progress(percent)
 
             chunk = []

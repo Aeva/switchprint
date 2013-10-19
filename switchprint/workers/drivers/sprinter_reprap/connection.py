@@ -106,7 +106,7 @@ class SerialConnection:
 
     def __setup_port(self, port, baud):
         """Connect to the serial port and divine some information."""
-        self.__s = serial.Serial(port, baud, timeout=0.25)
+        self.__s = serial.Serial(port, baud)
         self.__reset()
         giveup = 20 # poll the device for about five seconds before giving in
         post = ""
@@ -125,8 +125,6 @@ class SerialConnection:
                 temp = parse_bed_temp(self.__querie("M105")[0])
                 self.reported["heated_bed"] = temp is not None
                 return True
-            #elif trigger=="marlin":
-            #    import pdb; pdb.set_trace()
         return False
 
     def __querie(self, command):

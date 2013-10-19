@@ -26,9 +26,15 @@ class StreamCache(object):
     stream."""
 
     def __init__(self):
+        # pending interrupt commands
         self.interrupts = []
-        self.send_buffer = []
+        # pending normal commands
         self.pending = []
+        # cache of commands currently being negotiated with printer
+        self.send_buffer = []
+        # backlog of old commands
+        self.backlog = []
+
         self.__linenum = 0
         self.__magic_number = 4 # how many commands should be sent at once
 
@@ -94,20 +100,29 @@ class StreamCache(object):
             first_num = self.send_buffer[0][0]
             end_num = self.send_buffer[-1][0]
             if req_num > end_num:
+                # This means that all of the executed commands have
+                # been sent and we accidentally resent a command that
+                # was already processed.  Thus, we ignore it and empty
+                # the queue.
                 self.send_buffer = []
             elif req_num < first_num:
-                print "FATAL ERROR"
-                print "Requested line number:", req_num
-                print "Current cache contents:"
-                for i in self.send_buffer:
-                    print " -", i
-                raise RuntimeError(
-                    "Line requested that is no longer in the queue!!")
+                print "WARNING: Pulling statements from backlog for resending."
+                print "This means the queue is out of sync with the printer."
+                print "This will correct itself, but it shouldn't happen at all."
+                fetch_size = first_num-req_num
+                self.send_buffer = self.backlog[-fetch_size:] + self.send_buffer
+                self.backlock = self.backlog[:-fetch_size]
+                erase = None
             else:
                 # yes, this overrides the erase argument
                 erase = req_num - first_num
                             
         if type(erase) is int and erase > 0:
+            # Append erased section to the backlog
+            self.backlog += self.send_buffer[:erase]
+            # Trim the backglog, if necessary
+            if len(self.backlog) > 500:
+                self.backlog = self.backlog[-500:]
             # Erase the first part of the sent cache.
             self.send_buffer = self.send_buffer[erase:]
 
@@ -222,7 +237,19 @@ class SprinterProtocol(object):
                 if result.startswith("ok"):
                     cut += 1
                 elif result.startswith("Resend"):
-                    request = int(result.split(":")[-1].strip())
+                    try:
+                        request = int(result.split(":")[-1].strip())
+                    except ValueError:
+                        # ok, this is tricky - server sent back
+                        # "Resend:\n" or something similar.  We're
+                        # going to guess and we're going to guess
+                        # wrong.
+                        last = self.cache.send_buffer[:1] or self.cache.backlog[-1]
+                        if last:
+                            request = last[0]
+                        else:
+                            # This can probably be safely ignored.
+                            request = None
                     cut = None
                     break
             # also call process results for state-related events
@@ -231,6 +258,11 @@ class SprinterProtocol(object):
             print "*"
             print " cut", cut
             print " req", request
+            print "*"
+            print " cache:"
+            for i in self.cache.send_buffer:
+                print " -", i
+
         if ready or force:
             next_block = self.cache.nudge(request, cut)
             if next_block:

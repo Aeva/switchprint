@@ -106,13 +106,18 @@ class StreamCache(object):
                 # the queue.
                 self.send_buffer = []
             elif req_num < first_num:
-                print "WARNING: Pulling statements from backlog for resending."
-                print "This means the queue is out of sync with the printer."
-                print "This will correct itself, but it shouldn't happen at all."
                 fetch_size = first_num-req_num
-                self.send_buffer = self.backlog[-fetch_size:] + self.send_buffer
-                self.backlock = self.backlog[:-fetch_size]
-                erase = None
+                if fetch_size < 10:
+                    print "WARNING: Pulling statements from backlog for resending."
+                    print "This means the queue is out of sync with the printer."
+                    print "This will correct itself, but it shouldn't happen at all."
+                    self.send_buffer = self.backlog[-fetch_size:] + self.send_buffer
+                    self.backlock = self.backlog[:-fetch_size]
+                    erase = None
+                else:
+                    print "WARNING: Resend command was probably corrupted."
+                    print "Resending from last known position."
+                    erase = None
             else:
                 # yes, this overrides the erase argument
                 erase = req_num - first_num

@@ -216,6 +216,8 @@ class SprinterProtocol(object):
         if ready:
             results = self.__serial.readlines()
             cut = 0
+            print "-------------------------------------"
+            print results
             for result in results:
                 if result.startswith("ok"):
                     cut += 1
@@ -225,7 +227,10 @@ class SprinterProtocol(object):
                     break
             # also call process results for state-related events
             self.__process_response(results)
-
+            # debug
+            print "*"
+            print " cut", cut
+            print " req", request
         if ready or force:
             next_block = self.cache.nudge(request, cut)
             if next_block:
